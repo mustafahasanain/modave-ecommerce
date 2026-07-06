@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Star, Quote } from "lucide-react";
+import { ArrowRight, ArrowLeft, Star, Quote, Zap } from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { ProductCard } from "@/components/product/product-card";
 import { InstagramFeed } from "@/components/home/instagram-feed";
@@ -27,11 +27,12 @@ export default function HomePage() {
       <HeroCarousel />
 
       {/* Marquee announcement */}
-      <section className="bg-foreground text-background overflow-hidden">
-        <div className="marquee-pause flex w-max animate-marquee whitespace-nowrap py-2.5">
-          {[...Array(8)].map((_, i) => (
-            <span key={i} className="mx-8 text-[11px] font-medium uppercase tracking-[0.18em] inline-flex items-center gap-3">
+      <section className="overflow-hidden border-y border-[#e6e6e6] bg-white text-[#2b2b2b]">
+        <div className="marquee-pause flex h-[72px] w-max animate-marquee items-center whitespace-nowrap">
+          {[...Array(10)].map((_, i) => (
+            <span key={i} className="inline-flex h-full items-center gap-12 px-10 text-[16px] font-bold uppercase tracking-[0.12em] [&>span]:hidden">
               {i % 2 === 0 ? t.announcement.msg1 : t.announcement.msg2}
+              <Zap className="h-5 w-5 shrink-0 stroke-[1.8]" />
               <span className="opacity-40">✦</span>
             </span>
           ))}
