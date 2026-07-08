@@ -27,12 +27,15 @@ export default function HomePage() {
       <HeroCarousel />
 
       {/* Marquee announcement */}
-      <section className="overflow-hidden border-y border-[#e6e6e6] bg-white text-[#2b2b2b]">
-        <div className="marquee-pause flex h-[72px] w-max animate-marquee items-center whitespace-nowrap">
+      <section className="mb-6 overflow-hidden border-y border-[#e6e6e6] bg-white text-[#181818]">
+        <div className="marquee-pause flex h-[55px] w-max animate-marquee items-center whitespace-nowrap">
           {[...Array(10)].map((_, i) => (
-            <span key={i} className="inline-flex h-full items-center gap-12 px-10 text-[16px] font-bold uppercase tracking-[0.12em] [&>span]:hidden">
+            <span
+              key={i}
+              className="inline-flex h-full items-center gap-8 px-8 text-[13px] font-medium uppercase tracking-[0.12em] [&>span]:hidden"
+            >
               {i % 2 === 0 ? t.announcement.msg1 : t.announcement.msg2}
-              <Zap className="h-5 w-5 shrink-0 stroke-[1.8]" />
+              <Zap className="h-4 w-4 shrink-0 stroke-[1.8]" />
               <span className="opacity-40">✦</span>
             </span>
           ))}
@@ -107,10 +110,26 @@ export default function HomePage() {
       <section className="border-y border-border bg-secondary/30">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-12 lg:grid-cols-4">
           {[
-            { icon: "↩️", title: t.home.feature1Title, desc: t.home.feature1Desc },
-            { icon: "🚚", title: t.home.feature2Title, desc: t.home.feature2Desc },
-            { icon: "💬", title: t.home.feature3Title, desc: t.home.feature3Desc },
-            { icon: "🎁", title: t.home.feature4Title, desc: t.home.feature4Desc },
+            {
+              icon: "↩️",
+              title: t.home.feature1Title,
+              desc: t.home.feature1Desc,
+            },
+            {
+              icon: "🚚",
+              title: t.home.feature2Title,
+              desc: t.home.feature2Desc,
+            },
+            {
+              icon: "💬",
+              title: t.home.feature3Title,
+              desc: t.home.feature3Desc,
+            },
+            {
+              icon: "🎁",
+              title: t.home.feature4Title,
+              desc: t.home.feature4Desc,
+            },
           ].map((f, i) => (
             <motion.div
               key={i}
@@ -180,7 +199,9 @@ export default function HomePage() {
               <h3 className="mt-3 font-display text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
                 {t.home.bannerTitle}
               </h3>
-              <p className="mt-3 max-w-md text-sm opacity-80">{t.home.bannerSubtitle}</p>
+              <p className="mt-3 max-w-md text-sm opacity-80">
+                {t.home.bannerSubtitle}
+              </p>
               <Button
                 asChild
                 variant="secondary"
@@ -263,19 +284,37 @@ export default function HomePage() {
 
             <div className="mt-8 grid gap-5 sm:grid-cols-3">
               {[
-                { n: "01", t: locale === "ar" ? "خامات فاخرة" : "Premium fabrics", d: locale === "ar" ? "مختارة بعناية" : "Hand-selected" },
-                { n: "02", t: locale === "ar" ? "تصميم خالد" : "Timeless design", d: locale === "ar" ? "يتجاوز الموضة" : "Beyond trends" },
-                { n: "03", t: locale === "ar" ? "إنتاج مسؤول" : "Responsible making", d: locale === "ar" ? "بأثر أقل" : "Lower impact" },
+                {
+                  n: "01",
+                  t: locale === "ar" ? "خامات فاخرة" : "Premium fabrics",
+                  d: locale === "ar" ? "مختارة بعناية" : "Hand-selected",
+                },
+                {
+                  n: "02",
+                  t: locale === "ar" ? "تصميم خالد" : "Timeless design",
+                  d: locale === "ar" ? "يتجاوز الموضة" : "Beyond trends",
+                },
+                {
+                  n: "03",
+                  t: locale === "ar" ? "إنتاج مسؤول" : "Responsible making",
+                  d: locale === "ar" ? "بأثر أقل" : "Lower impact",
+                },
               ].map((f) => (
                 <div key={f.n} className="border-t border-border pt-3">
-                  <p className="font-display text-sm font-semibold text-muted-foreground">{f.n}</p>
+                  <p className="font-display text-sm font-semibold text-muted-foreground">
+                    {f.n}
+                  </p>
                   <p className="mt-1 text-sm font-medium">{f.t}</p>
                   <p className="text-xs text-muted-foreground">{f.d}</p>
                 </div>
               ))}
             </div>
 
-            <Button asChild variant="outline" className="mt-8 rounded-full px-7">
+            <Button
+              asChild
+              variant="outline"
+              className="mt-8 rounded-full px-7"
+            >
               <Link href="/shop">
                 {locale === "ar" ? "اكتشف المجموعة" : "Discover the edit"}
                 <Arrow className="h-4 w-4 rtl-flip" />
@@ -336,7 +375,8 @@ function Testimonials() {
       role: "Verified Buyer",
       product: "Contrasting sheepskin sweatshirt",
       price: "$60.00",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80",
+      avatar:
+        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=120&q=80",
     },
     {
       text: "I absolutely love this shop! The products are high-quality and the customer service is excellent. I always leave with exactly what I need and a smile on my face.",
@@ -344,7 +384,8 @@ function Testimonials() {
       role: "Verified Buyer",
       product: "Contrasting sheepskin sweatshirt",
       price: "$60.00",
-      avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&q=80",
+      avatar:
+        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=120&q=80",
     },
     {
       text: "Beautiful packaging, fast delivery, and the fabric quality exceeded my expectations. Modave has become my go-to for elegant everyday pieces.",
@@ -352,12 +393,16 @@ function Testimonials() {
       role: "Verified Buyer",
       product: "Belted Manteco coat",
       price: "$219.99",
-      avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&q=80",
+      avatar:
+        "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=120&q=80",
     },
   ];
 
   useEffect(() => {
-    const id = setInterval(() => setActive((p) => (p + 1) % testimonials.length), 5000);
+    const id = setInterval(
+      () => setActive((p) => (p + 1) % testimonials.length),
+      5000,
+    );
     return () => clearInterval(id);
   }, [testimonials.length]);
 
@@ -385,7 +430,10 @@ function Testimonials() {
             >
               <div className="mb-4 flex items-center justify-center gap-1">
                 {Array.from({ length: 5 }).map((_, i) => (
-                  <Star key={i} className="h-4 w-4 fill-amber-400 text-amber-400" />
+                  <Star
+                    key={i}
+                    className="h-4 w-4 fill-amber-400 text-amber-400"
+                  />
                 ))}
               </div>
               <p className="mx-auto max-w-2xl text-base text-foreground/80 sm:text-lg">
@@ -398,13 +446,21 @@ function Testimonials() {
                   className="h-11 w-11 rounded-full object-cover"
                 />
                 <div className="text-start">
-                  <p className="text-sm font-semibold">{testimonials[active].name}</p>
-                  <p className="text-xs text-muted-foreground">{testimonials[active].role}</p>
+                  <p className="text-sm font-semibold">
+                    {testimonials[active].name}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {testimonials[active].role}
+                  </p>
                 </div>
               </div>
               <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs">
-                <span className="text-muted-foreground">{testimonials[active].product}</span>
-                <span className="font-semibold">{testimonials[active].price}</span>
+                <span className="text-muted-foreground">
+                  {testimonials[active].product}
+                </span>
+                <span className="font-semibold">
+                  {testimonials[active].price}
+                </span>
               </div>
             </motion.div>
           </div>

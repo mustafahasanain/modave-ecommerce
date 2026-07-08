@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/footer";
 import { MiniCart } from "@/components/layout/mini-cart";
 import { QuickViewProvider } from "@/context/quick-view-provider";
 import { BackToTop } from "@/components/layout/back-to-top";
+import { LanguageSwitcher } from "@/components/layout/language-switcher";
 import { SearchCommand } from "@/components/layout/search-command";
 
 export default function StoreLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +18,7 @@ export default function StoreLayout({ children }: { children: React.ReactNode })
       <Footer />
       <MiniCart />
       <BackToTop />
+      <LanguageSwitcher />
       <SearchCommand />
     </div>
   );
