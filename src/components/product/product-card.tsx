@@ -2,15 +2,13 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Heart, ShoppingBag, Eye, Star } from "lucide-react";
+import { Heart, Eye, GitCompare, Zap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { useLanguage } from "@/context/language-provider";
 import { useCart } from "@/lib/cart-store";
 import { useUI } from "@/lib/ui-store";
 import { useQuickView } from "@/context/quick-view-provider";
-import { useCountdown, formatCountdown } from "@/hooks/use-countdown";
-import { useSiteSettings } from "@/hooks/use-site-settings";
 import { type Product } from "@/data/products";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
@@ -21,33 +19,26 @@ interface ProductCardProps {
   variant?: "default" | "compact";
 }
 
-export function ProductCard({ product, index = 0, variant = "default" }: ProductCardProps) {
+export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const { locale, t } = useLanguage();
   const [hovered, setHovered] = useState(false);
+  const [colorSrc, setColorSrc] = useState<string | null>(null);
   const addItem = useCart((s) => s.addItem);
   const toggleWishlist = useCart((s) => s.toggleWishlist);
   const wishlist = useCart((s) => s.wishlist);
   const isWishlisted = wishlist.includes(product.id);
   const { openQuickView } = useQuickView();
-  // HOT SALE countdown window length comes from the `countdownHours` site
-  // setting (default 48h) so admins can tune urgency without a code change.
-  const { settings } = useSiteSettings();
-  const countdownHours = Number(settings.countdownHours) || 48;
-  const countdown = useCountdown(product.id, countdownHours);
 
   const name = locale === "ar" ? product.nameAr : product.name;
-  const category = locale === "ar" ? product.categoryAr : product.category;
 
-  const handleAdd = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const addToCart = (size?: string) => {
     addItem({
       id: product.id,
       name,
       price: product.price,
       originalPrice: product.originalPrice,
       image: product.images[0],
-      size: product.sizes[0],
+      size: size ?? product.sizes[0],
       color: product.colors[0]?.name,
     });
     toast.success(`${name} ${t.common.addToCart.toLowerCase()}`, {
@@ -57,6 +48,18 @@ export function ProductCard({ product, index = 0, variant = "default" }: Product
       },
     });
     useUI.getState().setCartOpen(true);
+  };
+
+  const handleAdd = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart();
+  };
+
+  const handleAddSize = (e: React.MouseEvent, size: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    addToCart(size);
   };
 
   const handleWishlist = (e: React.MouseEvent) => {
@@ -70,6 +73,12 @@ export function ProductCard({ product, index = 0, variant = "default" }: Product
     e.preventDefault();
     e.stopPropagation();
     openQuickView(product);
+  };
+
+  const handleCompare = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toast.success(locale === "ar" ? "أضيف للمقارنة" : "Added to compare");
   };
 
   return (
@@ -102,13 +111,24 @@ export function ProductCard({ product, index = 0, variant = "default" }: Product
               fill
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
               className={`object-cover transition-opacity duration-500 ${
-                hovered ? "opacity-100" : "opacity-0"
+                hovered && !colorSrc ? "opacity-100" : "opacity-0"
               }`}
             />
           )}
 
-          {/* Badges — top-right, matching original */}
-          <div className="absolute end-3 top-3 flex flex-col gap-1.5">
+          {/* color-swatch preview — swaps to the hovered color's image */}
+          <Image
+            src={colorSrc ?? product.images[0]}
+            alt={name}
+            fill
+            sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 25vw"
+            className={`object-cover transition-opacity duration-300 ${
+              colorSrc ? "opacity-100" : "opacity-0"
+            }`}
+          />
+
+          {/* Badges — top-left */}
+          <div className="absolute start-3 top-3 flex flex-col gap-1.5">
             {product.discount && (
               <span className="rounded-full bg-[var(--sale)] px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-white">
                 -{product.discount}%
@@ -121,87 +141,108 @@ export function ProductCard({ product, index = 0, variant = "default" }: Product
             )}
           </div>
 
-          {/* Action stack: wishlist + quick view — top-left */}
-          <div className="absolute start-3 top-3 flex flex-col gap-1.5">
+          {/* Action stack — top-right, reveal on hover */}
+          <div className="absolute end-3 top-3 flex flex-col gap-2 opacity-0 transition-all duration-300 group-hover:opacity-100">
             <button
               onClick={handleWishlist}
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-background/90 backdrop-blur transition-all hover:bg-foreground hover:text-background"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-md transition-colors hover:bg-foreground hover:text-background"
               aria-label="Wishlist"
             >
               <Heart className={`h-4 w-4 ${isWishlisted ? "fill-[var(--sale)] text-[var(--sale)]" : ""}`} />
             </button>
             <button
+              onClick={handleCompare}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-md transition-colors hover:bg-foreground hover:text-background"
+              aria-label={locale === "ar" ? "قارن" : "Compare"}
+            >
+              <GitCompare className="h-4 w-4" />
+            </button>
+            <button
               onClick={handleQuickView}
-              className="flex h-8 w-8 -translate-x-3 items-center justify-center rounded-full bg-background/90 opacity-0 backdrop-blur transition-all duration-300 hover:bg-foreground hover:text-background group-hover:translate-x-0 group-hover:opacity-100"
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-black shadow-md transition-colors hover:bg-foreground hover:text-background"
               aria-label={locale === "ar" ? "نظرة سريعة" : "Quick view"}
             >
               <Eye className="h-4 w-4" />
             </button>
           </div>
 
-          {/* Quick actions */}
-          <div className="absolute inset-x-3 bottom-3 translate-y-3 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-            <button
-              onClick={handleAdd}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-background/95 py-2.5 text-xs font-semibold uppercase tracking-wider backdrop-blur transition-colors hover:bg-foreground hover:text-background"
-            >
-              <ShoppingBag className="h-3.5 w-3.5" />
-              {t.common.addToCart}
-            </button>
-          </div>
-
-          {/* HOT SALE countdown badge (matches original template) */}
+          {/* HOT SALE marquee bar — hidden on hover */}
           {product.discount && (
-            <div className="absolute inset-x-3 bottom-3 flex items-center justify-center transition-opacity duration-300 group-hover:opacity-0">
-              <div className="flex w-full items-center justify-between rounded-full bg-[var(--sale)] px-3 py-1.5 text-white shadow-sm">
-                <span className="text-[10px] font-bold uppercase tracking-wider">
-                  {countdown.expired
-                    ? locale === "ar" ? "انتهى!" : "Time's up!"
-                    : locale === "ar" ? "خصم 25%" : "HOT SALE 25%"}
-                </span>
-                {!countdown.expired && (
-                  <span className="font-mono text-[11px] font-bold tabular-nums">
-                    {formatCountdown(countdown)}
+            <div className="absolute inset-x-0 bottom-0 overflow-hidden bg-[#181818] py-2 transition-opacity duration-300 group-hover:opacity-0">
+              <div className="flex w-max animate-marquee items-center whitespace-nowrap">
+                {[...Array(8)].map((_, i) => (
+                  <span
+                    key={i}
+                    className="mx-3 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-white"
+                  >
+                    <Zap className="h-3 w-3 shrink-0 fill-white text-white" />
+                    {locale === "ar"
+                      ? `تخفيض ${product.discount}%`
+                      : `HOT SALE ${product.discount}% OFF`}
                   </span>
-                )}
+                ))}
               </div>
             </div>
           )}
+
+          {/* Hover: Quick Add + sizes */}
+          <div className="absolute inset-x-0 bottom-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <div className="px-4 pb-2">
+              <button
+                onClick={handleAdd}
+                className="w-full rounded-full bg-white py-3.5 text-xs font-semibold uppercase tracking-[0.15em] text-black shadow-md transition-colors hover:bg-foreground hover:text-background"
+              >
+                {locale === "ar" ? "إضافة سريعة" : "Quick Add"}
+              </button>
+            </div>
+            {product.sizes.length > 0 && (
+              <div className="flex items-center justify-center gap-5 bg-white/85 py-2 text-xs font-medium backdrop-blur">
+                {product.sizes.slice(0, 4).map((s) => (
+                  <button
+                    key={s}
+                    onClick={(e) => handleAddSize(e, s)}
+                    className="uppercase text-black/70 transition-colors hover:text-black"
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Info */}
         <div className="mt-3 px-0.5">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
-            {category}
-          </p>
-          <h3 className="mt-1 line-clamp-1 text-sm font-medium leading-snug transition-colors group-hover:text-foreground/80">
+          <h3 className="line-clamp-1 text-[15px] font-medium leading-snug text-foreground transition-colors group-hover:text-foreground/70">
             {name}
           </h3>
-          {variant === "default" && (
-            <div className="mt-1.5 flex items-center gap-1">
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              <span className="text-xs text-muted-foreground">
-                {product.rating.toFixed(1)} ({product.reviews})
-              </span>
-            </div>
-          )}
           <div className="mt-1.5 flex items-center gap-2">
-            <span className="text-sm font-semibold">{formatPrice(product.price)}</span>
             {product.originalPrice && (
-              <span className="text-xs text-muted-foreground line-through">
+              <span className="text-sm text-muted-foreground line-through">
                 {formatPrice(product.originalPrice)}
               </span>
             )}
+            <span className="text-sm font-semibold">{formatPrice(product.price)}</span>
           </div>
-          {/* Color dots */}
+          {/* Color dots — hover to preview that color on the image */}
           {product.colors.length > 0 && (
-            <div className="mt-2 flex items-center gap-1.5">
-              {product.colors.slice(0, 4).map((c) => (
-                <span
+            <div className="mt-2.5 flex items-center gap-1.5">
+              {product.colors.slice(0, 4).map((c, i) => (
+                <button
                   key={c.name}
-                  className="h-3 w-3 rounded-full border border-border"
+                  type="button"
+                  onMouseEnter={() =>
+                    setColorSrc(product.images[i] ?? product.images[0])
+                  }
+                  onMouseLeave={() => setColorSrc(null)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                  }}
+                  className="h-4 w-4 rounded-full border border-border ring-foreground ring-offset-1 ring-offset-background transition-shadow hover:ring-2"
                   style={{ backgroundColor: c.hex }}
                   title={c.name}
+                  aria-label={c.name}
                 />
               ))}
             </div>

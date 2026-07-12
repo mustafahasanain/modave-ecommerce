@@ -18,8 +18,8 @@ export default function HomePage() {
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
   const { products } = useProducts();
 
-  const newArrivals = products.filter((p) => p.newArrival).slice(0, 8);
-  const bestSellers = products.filter((p) => p.bestSeller).slice(0, 8);
+  const newArrivals = products.filter((p) => p.newArrival).slice(0, 4);
+  const bestSellers = products.filter((p) => p.bestSeller).slice(0, 4);
 
   return (
     <>
@@ -44,31 +44,26 @@ export default function HomePage() {
 
       {/* EXPLORE COLLECTIONS */}
       <section className="mx-auto max-w-7xl px-4 py-16 lg:py-20">
-        <div className="mb-8 flex items-end justify-between gap-4">
-          <motion.div
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <motion.h2
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
+            className="font-display text-3xl font-semibold tracking-tight sm:text-4xl lg:text-5xl"
           >
-            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              Curated edits
-            </p>
-            <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-              {t.home.exploreTitle}
-            </h2>
-          </motion.div>
+            {t.home.exploreTitle}
+          </motion.h2>
           <Link
             href="/collections"
-            className="group inline-flex items-center gap-2 text-sm font-medium hover:text-foreground/70"
+            className="shrink-0 text-sm font-medium underline underline-offset-4 hover:text-foreground/70"
           >
             {t.common.viewAllCollection}
-            <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-1 rtl-flip" />
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
-          {collections.slice(0, 6).map((c, i) => (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 lg:gap-4">
+          {collections.slice(0, 5).map((c, i) => (
             <motion.div
               key={c.name}
               initial={{ opacity: 0, y: 24 }}
@@ -77,26 +72,17 @@ export default function HomePage() {
               transition={{ duration: 0.5, delay: i * 0.05 }}
             >
               <Link href="/shop" className="group block">
-                <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-secondary">
+                <div className="relative aspect-[7/10] overflow-hidden rounded-lg bg-secondary">
                   <Image
                     src={c.image}
                     alt={c.name}
                     fill
-                    sizes="(max-width: 768px) 50vw, 16vw"
+                    sizes="(max-width: 768px) 50vw, 19vw"
                     className="object-cover transition-transform duration-[900ms] ease-out group-hover:scale-110"
                   />
-                  {/* gradient overlay for text legibility */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-                  <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-1 p-4 text-white">
-                    <p className="font-display text-lg font-semibold leading-tight drop-shadow-sm">
+                  <div className="absolute inset-x-0 bottom-0 p-4 lg:p-5">
+                    <span className="block w-full rounded-full bg-white px-4 py-3.5 text-center text-sm font-medium text-black shadow-sm transition-colors group-hover:bg-white/90">
                       {locale === "ar" ? c.nameAr : c.name}
-                    </p>
-                    <p className="text-[11px] uppercase tracking-wider opacity-90">
-                      {c.count} {t.collection.items}
-                    </p>
-                    <span className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium opacity-0 transition-all duration-300 group-hover:opacity-100">
-                      {t.common.shop}
-                      <Arrow className="h-3 w-3 rtl-flip" />
                     </span>
                   </div>
                 </div>
@@ -107,7 +93,7 @@ export default function HomePage() {
       </section>
 
       {/* FEATURES */}
-      <section className="border-y border-border bg-secondary/30">
+      {/* <section className="border-y border-border bg-secondary/30">
         <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-12 lg:grid-cols-4">
           {[
             {
@@ -149,31 +135,24 @@ export default function HomePage() {
             </motion.div>
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* NEW ARRIVALS */}
       <section className="mx-auto max-w-7xl px-4 py-16 lg:py-20">
-        <div className="mb-8 flex items-end justify-between gap-4">
+        <div className="mb-8 flex items-end justify-center gap-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
           >
-            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-              {t.home.newArrivalsDesc}
-            </p>
             <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
               {t.home.newArrivals}
             </h2>
+            <p className="text-xs mt-4 font-medium uppercase tracking-widest text-muted-foreground">
+              {t.home.newArrivalsDesc}
+            </p>
           </motion.div>
-          <Link
-            href="/shop"
-            className="group inline-flex items-center gap-2 text-sm font-medium hover:text-foreground/70"
-          >
-            {t.common.viewAll}
-            <Arrow className="h-4 w-4 transition-transform group-hover:translate-x-1 rtl-flip" />
-          </Link>
         </div>
         <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
           {newArrivals.map((p, i) => (
