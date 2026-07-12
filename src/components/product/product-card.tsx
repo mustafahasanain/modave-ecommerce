@@ -134,11 +134,6 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 -{product.discount}%
               </span>
             )}
-            {product.newArrival && !product.discount && (
-              <span className="rounded-full bg-foreground px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-background">
-                New
-              </span>
-            )}
           </div>
 
           {/* Action stack — top-right, reveal on hover */}

@@ -3,10 +3,22 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { ArrowRight, ArrowLeft, Star, Quote, Zap } from "lucide-react";
+import {
+  ArrowRight,
+  ArrowLeft,
+  ArrowUpRight,
+  Star,
+  Quote,
+  Zap,
+  Undo2,
+  Truck,
+  Headphones,
+  BadgeCheck,
+} from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { ProductCard } from "@/components/product/product-card";
 import { InstagramFeed } from "@/components/home/instagram-feed";
+import { CollectionBanner } from "@/components/home/collection-banner";
 import { HeroCarousel } from "@/components/home/hero-carousel";
 import { products as staticProducts, collections } from "@/data/products";
 import { useProducts } from "@/hooks/use-products";
@@ -92,51 +104,6 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* FEATURES */}
-      {/* <section className="border-y border-border bg-secondary/30">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-6 px-4 py-12 lg:grid-cols-4">
-          {[
-            {
-              icon: "↩️",
-              title: t.home.feature1Title,
-              desc: t.home.feature1Desc,
-            },
-            {
-              icon: "🚚",
-              title: t.home.feature2Title,
-              desc: t.home.feature2Desc,
-            },
-            {
-              icon: "💬",
-              title: t.home.feature3Title,
-              desc: t.home.feature3Desc,
-            },
-            {
-              icon: "🎁",
-              title: t.home.feature4Title,
-              desc: t.home.feature4Desc,
-            },
-          ].map((f, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.4, delay: i * 0.08 }}
-              className="flex items-start gap-3"
-            >
-              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-background text-2xl">
-                {f.icon}
-              </span>
-              <div>
-                <h6 className="text-sm font-semibold">{f.title}</h6>
-                <p className="mt-0.5 text-xs text-muted-foreground">{f.desc}</p>
-              </div>
-            </motion.div>
-          ))}
-        </div>
-      </section> */}
-
       {/* NEW ARRIVALS */}
       <section className="mx-auto max-w-7xl px-4 py-16 lg:py-20">
         <div className="mb-8 flex items-end justify-center gap-4">
@@ -161,50 +128,129 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* COLLECTION BANNER — dual promo + hotspot */}
+      <CollectionBanner />
+
+      {/* BEST SELLERS */}
+      <section className="mx-auto max-w-7xl px-4 py-16 lg:py-20">
+        <div className="mb-8 flex items-center justify-center gap-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+          >
+            <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
+              {t.home.bestSellers}
+            </h2>
+            <p className="text-xs mt-4 font-medium uppercase tracking-widest text-muted-foreground">
+              {t.home.bestSellersDesc}
+            </p>
+          </motion.div>
+        </div>
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+          {bestSellers.map((p, i) => (
+            <ProductCard key={p.id} product={p} index={i} />
+          ))}
+        </div>
+      </section>
+
       {/* PROMO BANNER */}
-      <section className="mx-auto max-w-7xl px-4 pb-4">
+      <section className="mx-auto max-w-7xl px-4 py-16 lg:py-24">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="relative overflow-hidden rounded-2xl bg-foreground text-background"
+          className="relative"
         >
-          <div className="grid items-center gap-6 p-8 sm:p-12 lg:grid-cols-2 lg:p-16">
-            <div>
-              <span className="text-xs font-medium uppercase tracking-widest opacity-70">
-                Limited time
-              </span>
-              <h3 className="mt-3 font-display text-3xl font-semibold leading-tight sm:text-4xl lg:text-5xl">
-                {t.home.bannerTitle}
-              </h3>
-              <p className="mt-3 max-w-md text-sm opacity-80">
-                {t.home.bannerSubtitle}
-              </p>
-              <Button
-                asChild
-                variant="secondary"
-                size="lg"
-                className="mt-6 rounded-full bg-background text-foreground hover:bg-background/90"
-              >
-                <Link href="/shop">
-                  {t.home.bannerCta}
-                  <Arrow className="h-4 w-4 rtl-flip" />
-                </Link>
-              </Button>
-            </div>
-            <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
+          {/* Staggered image pair — left square (higher), right wide (lower) */}
+          <div className="grid grid-cols-12 items-start gap-4 lg:gap-6">
+            <div className="relative col-span-5 aspect-square overflow-hidden rounded-sm bg-secondary">
               <Image
-                src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=900&q=80"
+                src="https://images.unsplash.com/photo-1434389677669-e08b4cac3105?w=900&q=80"
                 alt="Promo"
                 fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
+                sizes="(max-width: 1024px) 42vw, 40vw"
+                className="object-cover"
+              />
+            </div>
+            <div className="relative col-span-7 col-start-6 aspect-[4/3] overflow-hidden rounded-sm bg-secondary translate-y-8 lg:col-span-6 lg:col-start-7 lg:translate-y-20">
+              <Image
+                src="https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=900&q=80"
+                alt="Promo"
+                fill
+                sizes="(max-width: 1024px) 58vw, 50vw"
                 className="object-cover"
               />
             </div>
           </div>
-          <div className="pointer-events-none absolute -end-20 -top-20 h-64 w-64 rounded-full bg-background/10 blur-3xl" />
+
+          {/* Floating card */}
+          <div className="absolute start-1/2 top-1/2 w-[88%] max-w-md -translate-x-1/2 -translate-y-1/2 rounded-sm bg-background p-8 text-center shadow-2xl rtl:translate-x-1/2 sm:p-12">
+            <h3 className="font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl lg:text-5xl">
+              {t.home.bannerTitle}
+              <br />
+              {t.home.bannerTitle2}
+            </h3>
+            <p className="mt-4 text-sm text-muted-foreground">
+              {t.home.bannerSubtitle}
+            </p>
+            <Button
+              asChild
+              size="lg"
+              className="mt-7 rounded-full px-7 text-xs font-semibold uppercase tracking-[0.12em]"
+            >
+              <Link href="/shop">
+                {t.home.bannerCta}
+                <ArrowUpRight className="h-4 w-4 rtl-flip" />
+              </Link>
+            </Button>
+          </div>
         </motion.div>
+      </section>
+
+      {/* FEATURES */}
+      <section>
+        <div className="mx-auto grid max-w-7xl grid-cols-2 gap-x-6 gap-y-10 px-4 py-14 lg:grid-cols-4 lg:py-16">
+          {[
+            {
+              Icon: Undo2,
+              title: t.home.feature1Title,
+              desc: t.home.feature1Desc,
+            },
+            {
+              Icon: Truck,
+              title: t.home.feature2Title,
+              desc: t.home.feature2Desc,
+            },
+            {
+              Icon: Headphones,
+              title: t.home.feature3Title,
+              desc: t.home.feature3Desc,
+            },
+            {
+              Icon: BadgeCheck,
+              title: t.home.feature4Title,
+              desc: t.home.feature4Desc,
+            },
+          ].map((f, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 16 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              className="flex flex-col items-center px-2 text-center"
+            >
+              <f.Icon className="h-12 w-12 stroke-[1.4] text-foreground" />
+              <h6 className="mt-5 text-xl font-semibold text-foreground">
+                {f.title}
+              </h6>
+              <p className="mt-2.5 text-base text-muted-foreground">{f.desc}</p>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
       {/* EDITORIAL / BRAND STORY */}
@@ -304,7 +350,7 @@ export default function HomePage() {
       </section>
 
       {/* BEST SELLERS */}
-      <section className="mx-auto max-w-7xl px-4 py-16 lg:py-20">
+      {/* <section className="mx-auto max-w-7xl px-4 py-16 lg:py-20">
         <div className="mb-8 flex items-end justify-between gap-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -332,7 +378,7 @@ export default function HomePage() {
             <ProductCard key={p.id} product={p} index={i} />
           ))}
         </div>
-      </section>
+      </section> */}
 
       {/* TESTIMONIALS */}
       <Testimonials />
