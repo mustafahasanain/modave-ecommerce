@@ -6,10 +6,9 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import {
   SlidersHorizontal,
-  LayoutGrid,
-  List,
   ChevronRight,
   ChevronLeft,
+  CircleCheck,
   PackageSearch,
   ShoppingBag,
   Star,
@@ -22,7 +21,6 @@ import { useProducts } from "@/hooks/use-products";
 import { ProductCard } from "@/components/product/product-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { formatPrice } from "@/lib/format";
@@ -42,16 +40,8 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 
-const PAGE_SIZE = 8;
+const PAGE_SIZE = 12;
 const ALL_CATEGORIES = [
   "Clothing",
   "Accessories",
@@ -66,6 +56,15 @@ const ALL_SIZES = ["S", "M", "L", "XL", "XXL"];
 const PRICE_MAX = 300;
 
 type SortKey = "featured" | "priceLow" | "priceHigh" | "newest";
+type ViewMode = "list" | 2 | 3 | 4 | 5;
+
+// Grid density -> responsive column classes (kept as static strings for Tailwind)
+const GRID_COLS: Record<number, string> = {
+  2: "grid-cols-2",
+  3: "grid-cols-2 sm:grid-cols-3",
+  4: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-4",
+  5: "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5",
+};
 
 interface FilterState {
   priceRange: [number, number];
@@ -89,7 +88,7 @@ export default function ShopPage() {
 
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [sort, setSort] = useState<SortKey>("featured");
-  const [view, setView] = useState<"grid" | "list">("grid");
+  const [view, setView] = useState<ViewMode>(3);
   const [page, setPage] = useState(1);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -226,7 +225,7 @@ export default function ShopPage() {
       ? { name: p.nameAr, category: p.categoryAr }
       : { name: p.name, category: p.category };
 
-  // ---------- Filter panel (rendered inside the right-side drawer) ----------
+  // ---------- Filter panel (rendered inside the side drawer) ----------
   const FilterPanel = (
     <div className="space-y-1">
       {/* Price */}
@@ -383,131 +382,141 @@ export default function ShopPage() {
 
   return (
     <>
-      {/* ===== Page header ===== */}
-      <section className="bg-secondary/40">
-        <div className="mx-auto flex max-w-7xl items-center gap-6 px-4 py-10 sm:px-6 lg:py-14">
-          <div className="flex-1">
-            <nav className="flex items-center gap-1.5 text-xs uppercase tracking-widest text-muted-foreground">
-              <Link href="/" className="transition-colors hover:text-foreground">
-                {t.common.home}
-              </Link>
-              <ChevronRight className="h-3 w-3 rtl-flip" />
-              <span className="text-foreground">{t.shop.title}</span>
-            </nav>
-            <h1 className="mt-3 font-display text-4xl font-semibold tracking-tight sm:text-5xl">
+      {/* ===== Page header — centered title + breadcrumb with a bleed image on the side ===== */}
+      <section className="relative overflow-hidden bg-[#f3f1ea] dark:bg-secondary/40">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6">
+          <div className="relative z-10 flex min-h-[220px] flex-col items-center justify-center py-14 text-center lg:min-h-[260px]">
+            <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
               {t.shop.title}
             </h1>
+            <nav className="mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+              <Link href="/" className="transition-colors hover:text-foreground">
+                {t.shop.breadcrumb}
+              </Link>
+              <ChevronRight className="h-3.5 w-3.5 rtl-flip" />
+              <span className="text-foreground/70">{t.shop.title}</span>
+            </nav>
           </div>
-          {/* Side image (decorative, hidden on mobile) */}
-          <div className="relative hidden h-24 w-24 overflow-hidden rounded-full bg-secondary sm:block lg:h-32 lg:w-32">
-            <Image
-              src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&q=80"
-              alt={t.shop.title}
-              fill
-              sizes="128px"
-              className="object-cover"
-            />
-          </div>
+        </div>
+
+        {/* Bleed image anchored to the trailing edge of the band */}
+        <div className="pointer-events-none absolute inset-y-0 end-0 hidden w-[30%] max-w-[420px] md:block">
+          <Image
+            src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=800&q=80"
+            alt={t.shop.title}
+            fill
+            sizes="420px"
+            className="object-cover object-top"
+            priority
+          />
         </div>
       </section>
 
-      {/* ===== Full-width toolbar ===== */}
+      {/* ===== Toolbar ===== */}
       <section className="border-b border-border bg-background">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          {/* Left: Sort dropdown + sale checkbox (matches original) */}
-          <div className="flex items-center gap-4">
-            <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
-              <SelectTrigger className="h-9 w-44 rounded-full text-xs uppercase tracking-wider sm:w-56">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="featured">{t.shop.sortFeatured}</SelectItem>
-                <SelectItem value="priceLow">{t.shop.sortPriceLow}</SelectItem>
-                <SelectItem value="priceHigh">{t.shop.sortPriceHigh}</SelectItem>
-                <SelectItem value="newest">{t.shop.sortNewest}</SelectItem>
-              </SelectContent>
-            </Select>
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6">
+          <div className="flex items-center justify-between gap-4">
+            {/* Left: Filters + sale toggle */}
+            <div className="flex items-center gap-4 sm:gap-6">
+              <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-lg">
+                    <SlidersHorizontal className="me-2 h-4 w-4" />
+                    {t.common.filters}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent
+                  side={dir === "rtl" ? "right" : "left"}
+                  className="w-[90vw] gap-0 overflow-y-auto p-6 sm:max-w-md"
+                >
+                  <SheetHeader className="px-0">
+                    <SheetTitle className="font-display text-2xl">
+                      {t.common.filters}
+                    </SheetTitle>
+                  </SheetHeader>
+                  {FilterPanel}
+                </SheetContent>
+              </Sheet>
 
-            <Label
-              htmlFor="saleOnly"
-              className="flex cursor-pointer items-center gap-2 text-xs uppercase tracking-widest text-muted-foreground"
-            >
-              <Checkbox
-                id="saleOnly"
-                checked={filters.saleOnly}
-                onCheckedChange={(v) => update("saleOnly", v === true)}
-              />
-              {t.common.saleOnly}
-            </Label>
-          </div>
-
-          {/* Right: count + view toggle + Filters button (matches original) */}
-          <div className="flex items-center gap-3 sm:gap-5">
-            <p className="hidden text-xs uppercase tracking-widest text-muted-foreground sm:block">
-              {filtered.length} {t.common.productsFound}
-            </p>
-
-            <div className="hidden items-center rounded-full border border-border p-0.5 sm:flex">
               <button
                 type="button"
-                onClick={() => setView("grid")}
-                className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-                  view === "grid"
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-label="Grid view"
+                onClick={() => update("saleOnly", !filters.saleOnly)}
+                className="flex items-center gap-2 text-sm transition-colors"
+                aria-pressed={filters.saleOnly}
               >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setView("list")}
-                className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
-                  view === "list"
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-                aria-label="List view"
-              >
-                <List className="h-4 w-4" />
+                <CircleCheck
+                  className={`h-[18px] w-[18px] ${
+                    filters.saleOnly
+                      ? "fill-foreground text-background"
+                      : "text-muted-foreground"
+                  }`}
+                />
+                <span
+                  className={`hidden sm:inline ${
+                    filters.saleOnly ? "text-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {t.common.saleOnly}
+                </span>
               </button>
             </div>
 
-            {/* Filters button (opens right-side drawer) — on the right, matching original */}
-            <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-full">
-                  <SlidersHorizontal className="me-2 h-4 w-4" />
-                  {t.common.filters}
-                </Button>
-              </SheetTrigger>
-              <SheetContent
-                side={dir === "rtl" ? "right" : "left"}
-                className="w-[90vw] gap-0 overflow-y-auto p-6 sm:max-w-md"
+            {/* Center: view density toggles */}
+            <div className="hidden items-center gap-3 lg:flex">
+              <ViewButton
+                active={view === "list"}
+                onClick={() => setView("list")}
+                label="List view"
               >
-                <SheetHeader className="px-0">
-                  <SheetTitle className="font-display text-2xl">
-                    {t.common.filters}
-                  </SheetTitle>
-                </SheetHeader>
-                {FilterPanel}
-              </SheetContent>
-            </Sheet>
+                <ListIcon active={view === "list"} />
+              </ViewButton>
+              {[2, 3, 4, 5].map((n) => (
+                <ViewButton
+                  key={n}
+                  active={view === n}
+                  onClick={() => setView(n as ViewMode)}
+                  label={`${n} columns`}
+                >
+                  <DotGridIcon cols={n} active={view === n} />
+                </ViewButton>
+              ))}
+            </div>
+
+            {/* Right: sort */}
+            <div className="flex items-center gap-2">
+              <span className="hidden text-sm text-muted-foreground sm:inline">
+                {t.common.sortBy}:
+              </span>
+              <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+                <SelectTrigger className="h-9 w-44 rounded-lg text-sm sm:w-52">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="featured">{t.common.sortByDefault}</SelectItem>
+                  <SelectItem value="priceLow">{t.shop.sortPriceLow}</SelectItem>
+                  <SelectItem value="priceHigh">{t.shop.sortPriceHigh}</SelectItem>
+                  <SelectItem value="newest">{t.shop.sortNewest}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Products found */}
+          <div className="mt-4 flex items-center gap-3 text-sm text-muted-foreground">
+            <span>
+              <span className="font-medium text-foreground">{filtered.length}</span>{" "}
+              {t.common.productsFound}
+            </span>
+            <span className="h-4 w-px bg-border" aria-hidden />
           </div>
         </div>
       </section>
 
-      {/* ===== Full-width main content ===== */}
-      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-12">
-        {/* Mobile count */}
-        <p className="mb-4 text-xs uppercase tracking-widest text-muted-foreground sm:hidden">
-          {filtered.length} {t.common.productsFound}
-        </p>
-
+      {/* ===== Main content ===== */}
+      <section className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:py-10">
         {/* Active filter chips */}
         {activeChips.length > 0 && (
-          <div className="mb-5 flex flex-wrap items-center gap-2">
+          <div className="mb-6 flex flex-wrap items-center gap-2">
             {activeChips.map((chip) => (
               <button
                 key={chip.key}
@@ -529,8 +538,8 @@ export default function ShopPage() {
         )}
 
         {loading ? (
-          <div className="grid grid-cols-2 gap-x-5 gap-y-8 md:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, i) => (
+          <div className={`grid gap-x-5 gap-y-8 ${GRID_COLS[3]}`}>
+            {Array.from({ length: 9 }).map((_, i) => (
               <div key={i} className="group relative">
                 <div className="relative aspect-[3/4] overflow-hidden rounded-lg bg-secondary">
                   <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-secondary via-secondary/80 to-secondary" />
@@ -565,16 +574,16 @@ export default function ShopPage() {
         ) : (
           <div
             className={
-              view === "grid"
-                ? "grid grid-cols-2 gap-x-5 gap-y-8 md:grid-cols-3 lg:grid-cols-4"
-                : "flex flex-col gap-6"
+              view === "list"
+                ? "flex flex-col gap-6"
+                : `grid gap-x-5 gap-y-8 ${GRID_COLS[view]}`
             }
           >
             {paged.map((p, i) =>
-              view === "grid" ? (
-                <ProductCard key={p.id} product={p} index={i} />
-              ) : (
+              view === "list" ? (
                 <ListRow key={p.id} product={p} index={i} loc={localize(p)} />
+              ) : (
+                <ProductCard key={p.id} product={p} index={i} />
               )
             )}
           </div>
@@ -582,57 +591,112 @@ export default function ShopPage() {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="mt-12">
-            <Pagination>
-              <PaginationContent>
-                <PaginationItem>
-                  <PaginationPrevious
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPage((p) => Math.max(1, p - 1));
-                    }}
-                    className={
-                      safePage === 1
-                        ? "pointer-events-none opacity-40"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
-                  <PaginationItem key={n}>
-                    <PaginationLink
-                      href="#"
-                      isActive={n === safePage}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setPage(n);
-                      }}
-                    >
-                      {n}
-                    </PaginationLink>
-                  </PaginationItem>
-                ))}
-                <PaginationItem>
-                  <PaginationNext
-                    href="#"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      setPage((p) => Math.min(totalPages, p + 1));
-                    }}
-                    className={
-                      safePage === totalPages
-                        ? "pointer-events-none opacity-40"
-                        : undefined
-                    }
-                  />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
+          <div className="mt-14 flex items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={safePage === 1}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              aria-label="Previous page"
+            >
+              <ChevronLeft className="h-4 w-4 rtl-flip" />
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setPage(n)}
+                aria-current={n === safePage ? "page" : undefined}
+                className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium transition-colors ${
+                  n === safePage
+                    ? "bg-foreground text-background"
+                    : "border border-border text-foreground hover:border-foreground"
+                }`}
+              >
+                {n}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={safePage === totalPages}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+              aria-label="Next page"
+            >
+              <ChevronRight className="h-4 w-4 rtl-flip" />
+            </button>
           </div>
         )}
       </section>
     </>
+  );
+}
+
+// ---------- View toggle button + icons ----------
+
+function ViewButton({
+  active,
+  onClick,
+  label,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      aria-pressed={active}
+      className={`flex h-8 w-8 items-center justify-center rounded-md transition-colors ${
+        active ? "text-foreground" : "text-muted-foreground hover:text-foreground"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function DotGridIcon({ cols, active }: { cols: number; active: boolean }) {
+  return (
+    <span className="flex flex-col gap-[3px]">
+      {[0, 1].map((r) => (
+        <span key={r} className="flex gap-[3px]">
+          {Array.from({ length: cols }).map((_, c) => (
+            <span
+              key={c}
+              className={`h-[5px] w-[5px] rounded-full ${
+                active ? "bg-foreground" : "border border-current"
+              }`}
+            />
+          ))}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function ListIcon({ active }: { active: boolean }) {
+  return (
+    <span className="flex flex-col gap-[3px]">
+      {[0, 1].map((r) => (
+        <span key={r} className="flex items-center gap-1">
+          <span
+            className={`h-[5px] w-[5px] rounded-full ${
+              active ? "bg-foreground" : "border border-current"
+            }`}
+          />
+          <span
+            className={`h-[4px] w-3 rounded-[2px] ${
+              active ? "bg-foreground" : "border border-current"
+            }`}
+          />
+        </span>
+      ))}
+    </span>
   );
 }
 
