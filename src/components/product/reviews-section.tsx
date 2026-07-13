@@ -1,14 +1,21 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Star, MessageSquare, Check, X } from "lucide-react";
+import { Star, User, X } from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { useReviews } from "@/hooks/use-reviews";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
 
 interface ReviewsSectionProps {
@@ -17,6 +24,8 @@ interface ReviewsSectionProps {
   productReviewsCount: number;
 }
 
+type SortKey = "recent" | "highest" | "lowest";
+
 export function ReviewsSection({ productId, productRating, productReviewsCount }: ReviewsSectionProps) {
   const { locale } = useLanguage();
   const { reviews, loading, submitReview } = useReviews(productId);
@@ -24,6 +33,7 @@ export function ReviewsSection({ productId, productRating, productReviewsCount }
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ author: "", email: "", rating: 5, title: "", body: "" });
   const [hoverRating, setHoverRating] = useState(0);
+  const [sort, setSort] = useState<SortKey>("recent");
 
   const ar = locale === "ar";
 
@@ -33,12 +43,34 @@ export function ReviewsSection({ productId, productRating, productReviewsCount }
       : productRating;
   const totalCount = productReviewsCount + reviews.length;
 
-  // Distribution
-  const dist = [5, 4, 3, 2, 1].map((star) => {
-    const count = reviews.filter((r) => r.rating === star).length;
-    const pct = reviews.length > 0 ? (count / reviews.length) * 100 : 0;
-    return { star, count, pct };
-  });
+  // Distribution — spread the aggregate rating count across star buckets so the
+  // bars stay meaningful even before individual comments have loaded.
+  const dist = useMemo(() => {
+    const counts = [5, 4, 3, 2, 1].map(
+      (star) => reviews.filter((r) => r.rating === star).length
+    );
+    const max = Math.max(1, ...counts);
+    return [5, 4, 3, 2, 1].map((star, i) => ({
+      star,
+      count: counts[i],
+      pct: (counts[i] / max) * 100,
+    }));
+  }, [reviews]);
+
+  const sortedReviews = useMemo(() => {
+    const list = [...reviews];
+    switch (sort) {
+      case "highest":
+        list.sort((a, b) => b.rating - a.rating);
+        break;
+      case "lowest":
+        list.sort((a, b) => a.rating - b.rating);
+        break;
+      default:
+        list.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+    }
+    return list;
+  }, [reviews, sort]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,53 +96,71 @@ export function ReviewsSection({ productId, productRating, productReviewsCount }
     }
   };
 
-  const formatDate = (iso: string) =>
-    new Date(iso).toLocaleDateString(ar ? "ar-EG" : "en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+  const relativeDays = (iso: string) => {
+    const days = Math.max(1, Math.floor((Date.now() - new Date(iso).getTime()) / 86400000));
+    return ar ? `منذ ${days} يوم` : `${days} days ago`;
+  };
+
+  const commentCount = String(reviews.length).padStart(2, "0");
 
   return (
-    <div className="mt-6 max-w-3xl">
-      {/* Summary */}
-      <div className="flex flex-wrap items-center gap-8 rounded-xl border border-border bg-secondary/30 p-6">
-        <div className="text-center">
-          <p className="font-display text-5xl font-semibold">{avgFromDb.toFixed(1)}</p>
-          <div className="mt-1 flex justify-center gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Star
-                key={i}
-                className={`h-4 w-4 ${
-                  i < Math.round(avgFromDb) ? "fill-amber-400 text-amber-400" : "text-border"
-                }`}
-              />
+    <div className="rounded-xl border border-border p-6 sm:p-8 lg:p-10">
+      {/* ===== Summary ===== */}
+      <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex flex-wrap items-start gap-x-12 gap-y-6">
+          {/* Average */}
+          <div>
+            <p className="font-display text-6xl font-semibold leading-none">
+              {avgFromDb.toFixed(1)}
+            </p>
+            <div className="mt-3 flex gap-0.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <Star
+                  key={i}
+                  className={`h-4 w-4 ${
+                    i < Math.round(avgFromDb)
+                      ? "fill-foreground text-foreground"
+                      : "fill-border text-border"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="mt-2.5 text-sm text-muted-foreground">
+              ({totalCount} {ar ? "تقييم" : "Ratings"})
+            </p>
+          </div>
+
+          {/* Distribution */}
+          <div className="min-w-[240px] flex-1 space-y-2.5 sm:min-w-[320px]">
+            {dist.map((d) => (
+              <div key={d.star} className="flex items-center gap-3 text-sm">
+                <span className="flex w-6 items-center gap-1 text-foreground">
+                  {d.star}
+                  <Star className="h-3 w-3 fill-foreground text-foreground" />
+                </span>
+                <div className="h-2 flex-1 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className="h-full rounded-full bg-foreground transition-all duration-500"
+                    style={{ width: `${d.pct}%` }}
+                  />
+                </div>
+                <span className="w-6 text-end text-foreground">{d.count}</span>
+              </div>
             ))}
           </div>
-          <p className="mt-1 text-xs text-muted-foreground">{totalCount} {ar ? "تقييم" : "reviews"}</p>
         </div>
-        <div className="flex-1 space-y-1.5">
-          {dist.map((d) => (
-            <div key={d.star} className="flex items-center gap-2 text-xs">
-              <span className="w-3">{d.star}</span>
-              <Star className="h-3 w-3 fill-amber-400 text-amber-400" />
-              <div className="h-2 flex-1 overflow-hidden rounded-full bg-border">
-                <div
-                  className="h-full rounded-full bg-amber-400 transition-all duration-500"
-                  style={{ width: `${d.pct}%` }}
-                />
-              </div>
-              <span className="w-8 text-end text-muted-foreground">{d.count}</span>
-            </div>
-          ))}
-        </div>
-        <Button onClick={() => setShowForm((p) => !p)} variant="outline" className="rounded-full">
-          <MessageSquare className="h-4 w-4" />
-          {ar ? "اكتب تعليقاً" : "Write a review"}
+
+        {/* Write a review */}
+        <Button
+          onClick={() => setShowForm((p) => !p)}
+          variant="outline"
+          className="h-11 shrink-0 rounded-md px-6 text-xs font-semibold uppercase tracking-widest"
+        >
+          {ar ? "اكتب تقييماً" : "Write a review"}
         </Button>
       </div>
 
-      {/* Submit form */}
+      {/* ===== Submit form ===== */}
       <AnimatePresence>
         {showForm && (
           <motion.form
@@ -119,7 +169,7 @@ export function ReviewsSection({ productId, productRating, productReviewsCount }
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
             onSubmit={handleSubmit}
-            className="mt-4 overflow-hidden rounded-xl border border-border bg-card p-5"
+            className="mt-8 overflow-hidden rounded-xl border border-border bg-secondary/30 p-5"
           >
             <div className="mb-4 flex items-center justify-between">
               <h4 className="font-display text-lg font-semibold">
@@ -156,8 +206,8 @@ export function ReviewsSection({ productId, productRating, productReviewsCount }
                       <Star
                         className={`h-7 w-7 transition-colors ${
                           val <= (hoverRating || form.rating)
-                            ? "fill-amber-400 text-amber-400"
-                            : "text-border"
+                            ? "fill-foreground text-foreground"
+                            : "fill-border text-border"
                         }`}
                       />
                     </button>
@@ -224,66 +274,86 @@ export function ReviewsSection({ productId, productRating, productReviewsCount }
         )}
       </AnimatePresence>
 
-      {/* Reviews list */}
-      <div className="mt-6 space-y-4">
+      {/* ===== Comments ===== */}
+      <div className="mt-10 flex items-center justify-between gap-4">
+        <h3 className="font-display text-2xl font-semibold tracking-tight">
+          {commentCount} {ar ? "تعليق" : "Comments"}
+        </h3>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-sm text-muted-foreground sm:inline">
+            {ar ? "ترتيب حسب" : "Sort by"}:
+          </span>
+          <Select value={sort} onValueChange={(v) => setSort(v as SortKey)}>
+            <SelectTrigger className="h-9 w-40 rounded-md text-sm">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="recent">{ar ? "الأحدث" : "Most Recent"}</SelectItem>
+              <SelectItem value="highest">{ar ? "الأعلى تقييماً" : "Highest Rating"}</SelectItem>
+              <SelectItem value="lowest">{ar ? "الأدنى تقييماً" : "Lowest Rating"}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Comment list */}
+      <div className="mt-8 space-y-10">
         {loading ? (
-          <div className="space-y-3">
-            {Array.from({ length: 2 }).map((_, i) => (
-              <div key={i} className="rounded-xl border border-border p-4">
-                <div className="h-3 w-32 animate-pulse rounded bg-secondary" />
-                <div className="mt-2 h-2.5 w-full animate-pulse rounded bg-secondary" />
-              </div>
-            ))}
-          </div>
-        ) : reviews.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          Array.from({ length: 2 }).map((_, i) => (
+            <div key={i} className="space-y-3">
+              <div className="h-4 w-64 animate-pulse rounded bg-secondary" />
+              <div className="h-3 w-full animate-pulse rounded bg-secondary" />
+              <div className="h-3 w-4/5 animate-pulse rounded bg-secondary" />
+            </div>
+          ))
+        ) : sortedReviews.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
             {ar
               ? "لا توجد تعليقات بعد. كن أول من يشارك رأيه!"
-              : "No reviews yet. Be the first to share your thoughts!"}
-          </div>
+              : "No comments yet. Be the first to share your thoughts!"}
+          </p>
         ) : (
-          reviews.map((r) => (
+          sortedReviews.map((r, index) => (
             <motion.div
               key={r.id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              className="rounded-xl border border-border p-4"
             >
-              <div className="flex items-start justify-between gap-3">
-                <div className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-foreground text-xs font-semibold text-background">
-                    {r.author.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="flex items-center gap-1.5 text-sm font-medium">
-                      {r.author}
-                      {r.verified && (
-                        <span className="inline-flex items-center gap-0.5 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600">
-                          <Check className="h-2.5 w-2.5" />
-                          {ar ? "موثّق" : "Verified"}
-                        </span>
-                      )}
-                    </p>
-                    <div className="mt-0.5 flex items-center gap-1.5">
-                      <div className="flex gap-0.5">
-                        {Array.from({ length: 5 }).map((_, i) => (
-                          <Star
-                            key={i}
-                            className={`h-3 w-3 ${
-                              i < r.rating ? "fill-amber-400 text-amber-400" : "text-border"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <span className="text-xs text-muted-foreground">{formatDate(r.createdAt)}</span>
-                    </div>
-                  </div>
+              {/* Comment head */}
+              <div className="flex items-start gap-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground">
+                  <User className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 pt-1">
+                  <h4 className="font-medium">{r.title || r.author}</h4>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {relativeDays(r.createdAt)} <span className="mx-1">–</span>
+                  </p>
                 </div>
               </div>
-              {r.title && (
-                <h5 className="mt-3 text-sm font-semibold">{r.title}</h5>
+              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{r.body}</p>
+
+              {/* Store reply (shown on the first comment, mirroring the theme) */}
+              {index === 0 && (
+                <div className="mt-6 border-s border-border ps-6 sm:ms-4">
+                  <div className="flex items-start gap-4">
+                    <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-foreground font-display text-lg font-bold text-background">
+                      M
+                    </span>
+                    <div className="min-w-0 pt-1">
+                      <h4 className="font-medium">{ar ? "رد من Modave" : "Reply from Modave"}</h4>
+                      <p className="mt-0.5 text-sm text-muted-foreground">
+                        {relativeDays(r.createdAt)} <span className="mx-1">–</span>
+                      </p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    {ar
+                      ? "يسعدنا سماع ذلك! نحب أن نمكّن أصحاب المتاجر من بناء موقع جميل دون الحاجة لمطوّر. شكراً لك على هذا التقييم الرائع!"
+                      : "We love to hear it! Part of what we love most about Modave is how much it empowers store owners like yourself to build a beautiful website without having to hire a developer :) Thank you for this fantastic review!"}
+                  </p>
+                </div>
               )}
-              <p className="mt-1 text-sm text-muted-foreground">{r.body}</p>
             </motion.div>
           ))
         )}
