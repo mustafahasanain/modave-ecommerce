@@ -35,7 +35,8 @@ export const en = {
     newsletterAgree:
       "By clicking subscribe, you agree to the Terms of Service and Privacy Policy.",
     subscribe: "Subscribe",
-    yourEmail: "Your email address",
+    yourEmail: "Enter your e-mail",
+    termsOfService: "Terms of Service",
     information: "Information",
     aboutUs: "About Us",
     ourStories: "Our Stories",

@@ -22,3 +22,13 @@ generated
 
 .DS_Store
 Thumbs.db
+
+# Claude Code local worktrees & session data
+.claude/
+
+# Local dev database
+prisma/*.db
+prisma/*.db-journal
+
+# TypeScript incremental build cache
+*.tsbuildinfo

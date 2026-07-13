@@ -12,7 +12,6 @@ const fallbackImages = [
   "https://images.unsplash.com/photo-1556905055-8f358a7a47b2?w=400&q=80",
   "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=400&q=80",
   "https://images.unsplash.com/photo-1469334031218-e382a71b716b?w=400&q=80",
-  "https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=400&q=80",
 ];
 
 function parseImages(raw: string | undefined): string[] {
@@ -20,7 +19,9 @@ function parseImages(raw: string | undefined): string[] {
   try {
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) return [];
-    return parsed.filter((u): u is string => typeof u === "string" && u.trim().length > 0);
+    return parsed.filter(
+      (u): u is string => typeof u === "string" && u.trim().length > 0,
+    );
   } catch {
     return [];
   }
@@ -53,17 +54,17 @@ export function InstagramFeed() {
             {handle}
           </div>
           <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            {locale === "ar" ? "تابعنا على إنستغرام" : "Follow our journey"}
+            {locale === "ar" ? "متجر انستغرام" : "Shop Instagram"}
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
             {locale === "ar"
-              ? "إلهام يومي، إطلالات من وراء الكواليس، وأحدث القطع."
-              : "Daily inspiration, behind-the-scenes looks, and the latest arrivals."}
+              ? "جددي خزانة ملابسك باقتناء قطع جديدة اليوم!"
+              : "Elevate your wardrobe with fresh finds today!"}
           </p>
         </motion.div>
 
         {/* Feed grid */}
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-6">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-3 lg:grid-cols-5">
           {feedImages.map((src, i) => (
             <motion.a
               key={`${src}-${i}`}

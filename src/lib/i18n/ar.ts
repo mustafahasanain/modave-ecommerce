@@ -34,7 +34,8 @@ export const ar = {
     newsletterAgree:
       "بالنقر على اشتراك، أنت توافق على شروط الخدمة وسياسة الخصوصية.",
     subscribe: "اشتراك",
-    yourEmail: "بريدك الإلكتروني",
+    yourEmail: "أدخل بريدك الإلكتروني",
+    termsOfService: "شروط الخدمة",
     information: "معلومات",
     aboutUs: "من نحن",
     ourStories: "قصصنا",

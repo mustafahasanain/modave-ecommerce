@@ -8,6 +8,7 @@ import {
   ArrowLeft,
   ArrowUpRight,
   Star,
+  Eye,
   Quote,
   Zap,
   Undo2,
@@ -381,11 +382,97 @@ export default function HomePage() {
       </section> */}
 
       {/* TESTIMONIALS */}
-      <Testimonials />
+      <TestimonialsRedesign />
 
       {/* INSTAGRAM FEED */}
       <InstagramFeed />
     </>
+  );
+}
+
+function TestimonialsRedesign() {
+  const [active, setActive] = useState(0);
+  const testimonials = [
+    {
+      text: "Fantastic shop! Great selection, fair prices, and friendly staff. Highly recommended. The quality of the products is exceptional, and the prices are very reasonable!",
+      name: "Sybil Sharp",
+      product: "Contrasting sheepskin sweatshirt",
+      price: "$60.00",
+      image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=85",
+      productImage: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=120&q=85",
+    },
+    {
+      text: "I absolutely love this shop! The products are high-quality and the customer service is excellent. I always leave with exactly what I need and a smile on my face.",
+      name: "Mark G.",
+      product: "Contrasting sheepskin sweatshirt",
+      price: "$60.00",
+      image: "https://images.unsplash.com/photo-1516826957135-700dedea698c?auto=format&fit=crop&w=800&q=85",
+      productImage: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=120&q=85",
+    },
+    {
+      text: "Beautiful packaging, fast delivery, and the fabric quality exceeded my expectations. Modave has become my go-to for elegant everyday pieces.",
+      name: "Elena R.",
+      product: "Belted Manteco coat",
+      price: "$219.99",
+      image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=800&q=85",
+      productImage: "https://images.unsplash.com/photo-1548624149-fb5aefb2f732?auto=format&fit=crop&w=120&q=85",
+    },
+  ];
+
+  const visible = [testimonials[active], testimonials[(active + 1) % testimonials.length]];
+
+  return (
+    <section className="bg-background">
+      <div className="mx-auto max-w-7xl px-4 py-16 sm:py-20 lg:py-24">
+        <div className="mb-10 text-center sm:mb-11">
+          <h2 className="font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
+            Customer Say!
+          </h2>
+          <p className="mt-3 text-sm text-muted-foreground sm:text-base">
+            Our customers adore our products, and we constantly aim to delight them.
+          </p>
+        </div>
+
+        <div className="grid gap-5 lg:grid-cols-2 lg:gap-7">
+          {visible.map((testimonial, cardIndex) => (
+            <motion.article key={`${testimonial.name}-${active}`} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35, delay: cardIndex * 0.08 }} className="grid overflow-hidden rounded-md border border-border bg-background sm:grid-cols-[38%_62%]">
+              <div className="group relative min-h-64 overflow-hidden sm:min-h-0">
+                <img src={testimonial.image} alt="" className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-110" />
+                <button type="button" aria-label={`View ${testimonial.product}`} className="absolute left-1/2 top-1/2 grid size-10 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white text-foreground opacity-0 shadow-sm transition-all duration-200 group-hover:opacity-100 group-hover:scale-110 focus-visible:opacity-100">
+                  <Eye className="size-4 stroke-[1.8]" />
+                </button>
+              </div>
+
+              <div className="flex min-w-0 flex-col p-6 sm:p-6 lg:p-7">
+                <div className="flex gap-0.5 text-[#f3a13a]">
+                  {Array.from({ length: 5 }).map((_, index) => <Star key={index} className="size-4 fill-current" />)}
+                </div>
+                <p className="mt-3 text-sm leading-6 text-foreground/70 sm:text-[15px]">{testimonial.text}</p>
+                <p className="mt-3 flex items-center gap-1.5 text-sm font-medium text-foreground">
+                  {testimonial.name}
+                  <BadgeCheck className="size-4 text-[#2eab32]" />
+                </p>
+                <div className="mt-auto flex items-center gap-3 border-t border-border pt-4">
+                  <img src={testimonial.productImage} alt="" className="size-12 shrink-0 rounded-full object-cover" />
+                  <div className="min-w-0 text-sm leading-5">
+                    <p className="truncate font-medium text-foreground">{testimonial.product}</p>
+                    <p className="font-semibold text-foreground">{testimonial.price}</p>
+                  </div>
+                </div>
+              </div>
+            </motion.article>
+          ))}
+        </div>
+
+        <div className="mt-9 flex items-center justify-center gap-4">
+          {testimonials.map((_, index) => (
+            <button key={index} type="button" onClick={() => setActive(index)} className={`grid size-3 place-items-center rounded-full border border-foreground transition-colors ${active === index ? "bg-background" : "border-transparent"}`} aria-label={`Testimonial ${index + 1}`} aria-current={active === index ? "true" : undefined}>
+              {active === index ? <span className="size-1.5 rounded-full bg-foreground" /> : <span className="size-1.5 rounded-full border border-foreground" />}
+            </button>
+          ))}
+        </div>
+      </div>
+    </section>
   );
 }
 
