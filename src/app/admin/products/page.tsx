@@ -9,6 +9,7 @@ import { type Product } from "@/data/products";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
 import { useAdminProducts } from "@/hooks/use-admin-products";
+import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -505,6 +506,12 @@ export default function AdminProductsPage() {
                 </Select>
               </div>
             </div>
+
+            <ImageUpload
+              label={locale === "ar" ? "Upload product image" : "Upload product image"}
+              value={form.imageUrl}
+              onChange={(imageUrl) => setForm({ ...form, imageUrl })}
+            />
 
             {/* Image URL with live preview */}
             <div className="space-y-2">

@@ -14,6 +14,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 interface BlogPost { id: number; title: string; titleAr: string; excerpt: string; category: string; author: string; date: string; readTime: number; image: string; featured: boolean; status: string; }
 
@@ -108,7 +109,7 @@ export default function AdminBlogPage() {
               <div><Label className="text-xs uppercase">Date</Label><Input type="date" value={form.date} onChange={(e) => setForm({...form, date: e.target.value})} /></div>
               <div><Label className="text-xs uppercase">Read Time (min)</Label><Input type="number" value={form.readTime} onChange={(e) => setForm({...form, readTime: e.target.value})} /></div>
             </div>
-            <div><Label className="text-xs uppercase">Image URL</Label><div className="flex gap-2">{form.image && <img src={form.image} alt="" className="size-12 rounded object-cover" />}<Input value={form.image} onChange={(e) => setForm({...form, image: e.target.value})} placeholder="https://..." /></div></div>
+            <ImageUpload label="Post image" value={form.image} onChange={(image) => setForm({...form, image})} />
             <div><Label className="text-xs uppercase">Status</Label><Select value={form.status} onValueChange={(v) => setForm({...form, status: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="published">Published</SelectItem><SelectItem value="draft">Draft</SelectItem></SelectContent></Select></div>
             <DialogFooter><Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button></DialogFooter>
           </form>

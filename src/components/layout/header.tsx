@@ -2,8 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Search,
   User,
@@ -12,6 +12,9 @@ import {
   Menu,
   Phone,
   Mail,
+  LogOut,
+  Package,
+  Settings,
 } from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { useCart } from "@/lib/cart-store";
@@ -41,9 +44,12 @@ const navItems = [
 export function Header() {
   const { t, locale } = useLanguage();
   const pathname = usePathname();
+  const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [customer, setCustomer] = useState<{ name: string; email: string } | null>(null);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const accountCloseTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const count = useCart((s) => s.count());
   const wishlist = useCart((s) => s.wishlist.length);
   const setCartOpen = useUI((s) => s.setCartOpen);
@@ -59,9 +65,26 @@ export function Header() {
   useEffect(() => {
     fetch("/api/account/auth")
       .then((response) => response.json())
-      .then((data) => setIsSignedIn(Boolean(data.customer)))
-      .catch(() => setIsSignedIn(false));
+      .then((data) => setCustomer(data.customer ?? null))
+      .catch(() => setCustomer(null));
   }, [pathname]);
+
+  async function signOut() {
+    await fetch("/api/account/auth", { method: "DELETE" });
+    setCustomer(null);
+    setAccountMenuOpen(false);
+    if (pathname.startsWith("/account")) router.push("/");
+    router.refresh();
+  }
+
+  function openAccountMenu() {
+    if (accountCloseTimer.current) clearTimeout(accountCloseTimer.current);
+    setAccountMenuOpen(true);
+  }
+
+  function closeAccountMenuSoon() {
+    accountCloseTimer.current = setTimeout(() => setAccountMenuOpen(false), 160);
+  }
 
   const labelMap: Record<string, string> = {
     home: t.nav.home,
@@ -176,35 +199,72 @@ export function Header() {
             <Search className="h-[22px] w-[22px] stroke-[2.35]" />
           </button>
 
-          {isSignedIn ? (
-            <Link
-              href="/account"
-              aria-label="Account"
-              className="flex size-9 items-center justify-center text-[#141414] transition-colors hover:text-[#ff2d36] lg:size-10"
-            >
-              <User className="h-[22px] w-[22px] stroke-[2.35]" />
-            </Link>
-          ) : (
-            <DropdownMenu>
+          <DropdownMenu open={accountMenuOpen} onOpenChange={setAccountMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
                   aria-label="Account options"
+                  onMouseEnter={openAccountMenu}
+                  onMouseLeave={closeAccountMenuSoon}
                   className="flex size-9 items-center justify-center text-[#141414] transition-colors hover:text-[#ff2d36] lg:size-10"
                 >
-                  <User className="h-[22px] w-[22px] stroke-[2.35]" />
+                  {customer ? (
+                    <span className="flex size-8 items-center justify-center rounded-full bg-[#161310] text-[11px] font-semibold text-white">
+                      {customer.name.slice(0, 2).toUpperCase()}
+                    </span>
+                  ) : (
+                    <User className="h-[22px] w-[22px] stroke-[2.35]" />
+                  )}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="min-w-36">
-                <DropdownMenuItem asChild>
-                  <Link href="/account/login">Login</Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/account/register">Sign up</Link>
-                </DropdownMenuItem>
+              <DropdownMenuContent
+                align="end"
+                sideOffset={8}
+                onMouseEnter={openAccountMenu}
+                onMouseLeave={closeAccountMenuSoon}
+                className="w-64 rounded-xl p-0"
+              >
+                {customer ? (
+                  <>
+                    <div className="flex items-center gap-3 px-4 py-3.5">
+                      <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#f2b46d] text-sm font-semibold text-[#22170e]">
+                        {customer.name.slice(0, 2).toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">{customer.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">{customer.email}</p>
+                        <span className="mt-1 inline-flex items-center gap-1 text-[11px] text-emerald-600 before:size-1.5 before:rounded-full before:bg-emerald-500">Online</span>
+                      </div>
+                    </div>
+                    <div className="border-t px-1 py-1.5">
+                      <DropdownMenuItem asChild onSelect={() => setAccountMenuOpen(false)}>
+                        <Link href="/account"><User className="size-4" />My account</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild onSelect={() => setAccountMenuOpen(false)}>
+                        <Link href="/account/orders"><Package className="size-4" />My orders</Link>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild onSelect={() => setAccountMenuOpen(false)}>
+                        <Link href="/account/settings"><Settings className="size-4" />Settings</Link>
+                      </DropdownMenuItem>
+                    </div>
+                    <div className="border-t px-1 py-1.5">
+                      <DropdownMenuItem onSelect={signOut} className="text-destructive focus:text-destructive">
+                        <LogOut className="size-4" />Log out
+                      </DropdownMenuItem>
+                    </div>
+                  </>
+                ) : (
+                  <div className="p-1.5">
+                    <DropdownMenuItem asChild>
+                      <Link href="/account/login">Login</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/account/register">Sign up</Link>
+                    </DropdownMenuItem>
+                  </div>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
-          )}
 
           <Link
             href="/wishlist"

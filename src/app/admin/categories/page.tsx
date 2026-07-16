@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 interface Category { id: number; name: string; nameAr: string; slug: string; image: string; itemCount: number; active: boolean; }
 
@@ -67,7 +68,7 @@ export default function AdminCategoriesPage() {
             <div><Label className="text-xs uppercase">Name</Label><Input value={form.name} onChange={(e) => setForm({...form, name: e.target.value})} required /></div>
             <div><Label className="text-xs uppercase">Name (Arabic)</Label><Input value={form.nameAr} onChange={(e) => setForm({...form, nameAr: e.target.value})} dir="rtl" /></div>
             <div><Label className="text-xs uppercase">Slug</Label><Input value={form.slug} onChange={(e) => setForm({...form, slug: e.target.value})} placeholder="auto-generated" /></div>
-            <div><Label className="text-xs uppercase">Image URL</Label><div className="flex gap-2">{form.image && <img src={form.image} alt="" className="size-12 rounded object-cover" />}<Input value={form.image} onChange={(e) => setForm({...form, image: e.target.value})} placeholder="https://..." /></div></div>
+            <ImageUpload label="Category image" value={form.image} onChange={(image) => setForm({...form, image})} />
             <div><Label className="text-xs uppercase">Item Count</Label><Input type="number" value={form.itemCount} onChange={(e) => setForm({...form, itemCount: e.target.value})} /></div>
             <div className="flex items-center gap-2"><input type="checkbox" id="active" checked={form.active} onChange={(e) => setForm({...form, active: e.target.checked})} /><Label htmlFor="active">Active</Label></div>
             <DialogFooter><Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button></DialogFooter>

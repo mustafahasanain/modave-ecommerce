@@ -25,6 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { ImageUpload } from "@/components/admin/image-upload";
 
 // ---------- Types ----------
 interface HeroSlide {
@@ -175,7 +176,7 @@ export default function AdminSettingsPage() {
   // ---------- Create handlers ----------
   async function createHero() {
     if (!heroForm.title.trim()) { toast.error("Title is required"); return; }
-    if (!heroForm.image.trim()) { toast.error("Image URL is required"); return; }
+    if (!heroForm.image.trim()) { toast.error("An image is required"); return; }
     setCreating("hero");
     try {
       const res = await fetch("/api/admin/hero", {
@@ -415,7 +416,7 @@ export default function AdminSettingsPage() {
             <DialogDescription>Create a new home-page hero slide.</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-1">
-            <div><Label>Image URL *</Label><Input value={heroForm.image} onChange={(e) => setHeroForm({...heroForm, image: e.target.value})} placeholder="https://..." /></div>
+            <ImageUpload label="Hero image" required value={heroForm.image} onChange={(image) => setHeroForm({...heroForm, image})} />
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Eyebrow (EN)</Label><Input value={heroForm.eyebrow} onChange={(e) => setHeroForm({...heroForm, eyebrow: e.target.value})} /></div>
               <div><Label>Eyebrow (AR)</Label><Input value={heroForm.eyebrowAr} onChange={(e) => setHeroForm({...heroForm, eyebrowAr: e.target.value})} dir="rtl" /></div>
@@ -467,7 +468,7 @@ export default function AdminSettingsPage() {
               <div><Label>Product</Label><Input value={testimonialForm.product} onChange={(e) => setTestimonialForm({...testimonialForm, product: e.target.value})} /></div>
               <div><Label>Price (display)</Label><Input value={testimonialForm.price} onChange={(e) => setTestimonialForm({...testimonialForm, price: e.target.value})} placeholder="$129.00" /></div>
             </div>
-            <div><Label>Avatar URL</Label><Input value={testimonialForm.avatar} onChange={(e) => setTestimonialForm({...testimonialForm, avatar: e.target.value})} placeholder="https://..." /></div>
+            <ImageUpload label="Avatar" value={testimonialForm.avatar} onChange={(avatar) => setTestimonialForm({...testimonialForm, avatar})} />
             <div className="grid grid-cols-2 gap-3">
               <div><Label>Order</Label><Input type="number" value={testimonialForm.order} onChange={(e) => setTestimonialForm({...testimonialForm, order: Number(e.target.value)})} /></div>
               <div className="flex items-center justify-between rounded-lg border p-3">
