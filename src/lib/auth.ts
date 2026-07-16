@@ -1,13 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL || "admin@modave.com";
-const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
 const SESSION_COOKIE = "modave_admin_session";
 const SESSION_VALUE = "authenticated";
-
-export function validateCredentials(email: string, password: string): boolean {
-  return email.trim().toLowerCase() === ADMIN_EMAIL && password === ADMIN_PASSWORD;
-}
 
 export function createSessionCookie(): string {
   return SESSION_VALUE;

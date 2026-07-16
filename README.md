@@ -21,7 +21,10 @@ Create `.env` and set `DATABASE_URL`:
 DATABASE_URL="file:./db/custom.db"
 ```
 
-Optional admin credentials:
+Initial credentials for the one dashboard administrator. On the first successful
+admin login, the app creates the single `Admin` database record and stores a
+password hash. Customer accounts remain in the separate `Customer` table and
+cannot access `/admin`.
 
 ```env
 ADMIN_EMAIL="admin@modave.com"

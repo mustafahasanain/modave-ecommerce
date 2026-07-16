@@ -1,0 +1,45 @@
+import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+
+const COOKIE_NAME = "modave_customer_session";
+const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
+const SESSION_SECRET = process.env.CUSTOMER_SESSION_SECRET || process.env.ADMIN_PASSWORD || "modave-development-session-secret";
+
+export function hashPassword(password: string) {
+  const salt = randomBytes(16).toString("hex");
+  const hash = scryptSync(password, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
+
+export function verifyPassword(password: string, storedHash: string) {
+  const [salt, hash] = storedHash.split(":");
+  if (!salt || !hash) return false;
+  const derivedHash = scryptSync(password, salt, 64).toString("hex");
+  return timingSafeEqual(Buffer.from(hash, "hex"), Buffer.from(derivedHash, "hex"));
+}
+
+export function createCustomerSession(customerId: string) {
+  const payload = `${customerId}.${Date.now() + SESSION_MAX_AGE * 1000}`;
+  const signature = createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
+  return `${payload}.${signature}`;
+}
+
+export function getCustomerIdFromSession(value: string | undefined) {
+  if (!value) return null;
+  const [customerId, expiresAt, signature] = value.split(".");
+  if (!customerId || !expiresAt || !signature || Number(expiresAt) < Date.now()) return null;
+  const payload = `${customerId}.${expiresAt}`;
+  const expected = createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
+  if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
+  return customerId;
+}
+
+export const customerSessionCookie = {
+  name: COOKIE_NAME,
+  options: {
+    httpOnly: true,
+    sameSite: "lax" as const,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: SESSION_MAX_AGE,
+    path: "/",
+  },
+};

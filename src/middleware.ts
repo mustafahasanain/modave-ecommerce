@@ -1,8 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE_NAME, isValidSession, redirectToLogin } from "@/lib/auth";
 
+const CUSTOMER_SESSION_COOKIE = "modave_customer_session";
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
+
+  // Do not serve the account dashboard unless a customer session exists. The
+  // dashboard also verifies the signed session and expiry before rendering.
+  if (
+    pathname.startsWith("/account") &&
+    pathname !== "/account/login" &&
+    pathname !== "/account/register" &&
+    !req.cookies.has(CUSTOMER_SESSION_COOKIE)
+  ) {
+    const loginUrl = new URL("/account/login", req.url);
+    loginUrl.searchParams.set("from", pathname);
+    return NextResponse.redirect(loginUrl);
+  }
 
   // Protect all /admin PAGE routes EXCEPT /admin/login
   if (pathname.startsWith("/admin") && !pathname.startsWith("/admin/login")) {
@@ -32,5 +47,5 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*", "/account/:path*"],
 };

@@ -24,6 +24,12 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const navItems = [
   { key: "home", href: "/" },
@@ -37,6 +43,7 @@ export function Header() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const count = useCart((s) => s.count());
   const wishlist = useCart((s) => s.wishlist.length);
   const setCartOpen = useUI((s) => s.setCartOpen);
@@ -48,6 +55,13 @@ export function Header() {
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  useEffect(() => {
+    fetch("/api/account/auth")
+      .then((response) => response.json())
+      .then((data) => setIsSignedIn(Boolean(data.customer)))
+      .catch(() => setIsSignedIn(false));
+  }, [pathname]);
 
   const labelMap: Record<string, string> = {
     home: t.nav.home,
@@ -162,13 +176,35 @@ export function Header() {
             <Search className="h-[22px] w-[22px] stroke-[2.35]" />
           </button>
 
-          <Link
-            href="/account"
-            aria-label="Account"
-            className="hidden size-9 items-center justify-center text-[#141414] transition-colors hover:text-[#ff2d36] sm:flex lg:size-10"
-          >
-            <User className="h-[22px] w-[22px] stroke-[2.35]" />
-          </Link>
+          {isSignedIn ? (
+            <Link
+              href="/account"
+              aria-label="Account"
+              className="flex size-9 items-center justify-center text-[#141414] transition-colors hover:text-[#ff2d36] lg:size-10"
+            >
+              <User className="h-[22px] w-[22px] stroke-[2.35]" />
+            </Link>
+          ) : (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  aria-label="Account options"
+                  className="flex size-9 items-center justify-center text-[#141414] transition-colors hover:text-[#ff2d36] lg:size-10"
+                >
+                  <User className="h-[22px] w-[22px] stroke-[2.35]" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="min-w-36">
+                <DropdownMenuItem asChild>
+                  <Link href="/account/login">Login</Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/account/register">Sign up</Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
 
           <Link
             href="/wishlist"

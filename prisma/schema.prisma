@@ -71,6 +71,7 @@ model Customer {
   id        String   @id @default(cuid())
   name      String
   email     String   @unique
+  passwordHash String?
   phone     String?
   orders    Int      @default(0)
   totalSpent Float   @default(0)
@@ -80,6 +81,19 @@ model Customer {
   createdAt DateTime @default(now())
 
   @@index([tier])
+}
+
+// The store has exactly one dashboard administrator. `isPrimary` is unique so
+// SQLite cannot contain a second admin record.
+model Admin {
+  id           String   @id @default(cuid())
+  isPrimary    Boolean  @default(true) @unique
+  name         String   @default("Store Admin")
+  email        String   @unique
+  passwordHash String
+  lastLoginAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Review {

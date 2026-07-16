@@ -1,5 +1,24 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { customerSessionCookie, getCustomerIdFromSession } from "@/lib/customer-auth";
+
+// GET /api/orders — return only the signed-in customer's orders
+export async function GET(req: NextRequest) {
+  const customerId = getCustomerIdFromSession(req.cookies.get(customerSessionCookie.name)?.value);
+  if (!customerId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const customer = await db.customer.findUnique({
+    where: { id: customerId },
+    select: { email: true },
+  });
+  if (!customer) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
+  const orders = await db.order.findMany({
+    where: { customerEmail: customer.email },
+    orderBy: { createdAt: "desc" },
+  });
+  return NextResponse.json({ orders });
+}
 
 // POST /api/orders — create a new order from checkout
 export async function POST(req: NextRequest) {
