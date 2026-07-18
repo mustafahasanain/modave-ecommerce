@@ -9,6 +9,7 @@ import { type Product } from "@/data/products";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
 import { useAdminProducts } from "@/hooks/use-admin-products";
+import { useCategories } from "@/hooks/use-categories";
 import { ImageUpload } from "@/components/admin/image-upload";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -70,7 +71,7 @@ const emptyForm: FormState = {
   name: "",
   price: "",
   stock: "",
-  category: "Clothing",
+  category: "",
   status: "active",
   imageUrl: "",
   description: "",
@@ -81,6 +82,7 @@ const PAGE_SIZE = 8;
 export default function AdminProductsPage() {
   const { t, locale } = useLanguage();
   const { products: allProducts, loading, createProduct, updateProduct, deleteProduct } = useAdminProducts();
+  const { categories: allCategories } = useCategories();
 
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
@@ -90,10 +92,11 @@ export default function AdminProductsPage() {
   const [deleteTarget, setDeleteTarget] = useState<Product | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Categories derived from product list (deduped)
+  // Categories sourced from the real Categories table so the dropdown always
+  // matches what's managed on the Categories admin page.
   const categories = useMemo(
-    () => Array.from(new Set(allProducts.map((p) => p.category))).sort(),
-    [allProducts]
+    () => allCategories.map((c) => c.name),
+    [allCategories]
   );
 
   const filtered = useMemo(() => {
@@ -155,11 +158,13 @@ export default function AdminProductsPage() {
       const images = form.imageUrl.trim()
         ? [form.imageUrl.trim()]
         : [];
+      const matchedCategory = allCategories.find((c) => c.name === form.category);
       const payload = {
         name: form.name,
         price: Number(form.price),
         stock: Number(form.stock),
         category: form.category,
+        categoryAr: matchedCategory?.nameAr || form.category,
         status: form.status,
         images,
         description: form.description,

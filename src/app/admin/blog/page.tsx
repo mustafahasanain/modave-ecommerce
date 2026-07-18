@@ -16,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/image-upload";
 
-interface BlogPost { id: number; title: string; titleAr: string; excerpt: string; category: string; author: string; date: string; readTime: number; image: string; featured: boolean; status: string; }
+interface BlogPost { id: number; title: string; titleAr: string; excerpt: string; excerptAr: string; category: string; categoryAr: string; author: string; authorAr: string; date: string; readTime: number; image: string; featured: boolean; status: string; }
 
 export default function AdminBlogPage() {
   const { locale } = useLanguage();

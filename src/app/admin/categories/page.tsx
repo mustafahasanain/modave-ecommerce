@@ -25,13 +25,13 @@ export default function AdminCategoriesPage() {
   const [editing, setEditing] = useState<Category | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ name: "", nameAr: "", slug: "", image: "", itemCount: "12", active: true });
+  const [form, setForm] = useState({ name: "", nameAr: "", slug: "", image: "", active: true });
 
   const refetch = useCallback(async () => { setLoading(true); try { const res = await fetch("/api/admin/categories", { cache: "no-store" }); const d = await res.json(); setCats(d.categories || []); } catch {} setLoading(false); }, []);
   useEffect(() => { refetch(); }, [refetch]);
 
-  function openAdd() { setEditing(null); setForm({ name: "", nameAr: "", slug: "", image: "", itemCount: "12", active: true }); setDialogOpen(true); }
-  function openEdit(c: Category) { setEditing(c); setForm({ name: c.name, nameAr: c.nameAr, slug: c.slug, image: c.image, itemCount: String(c.itemCount), active: c.active }); setDialogOpen(true); }
+  function openAdd() { setEditing(null); setForm({ name: "", nameAr: "", slug: "", image: "", active: true }); setDialogOpen(true); }
+  function openEdit(c: Category) { setEditing(c); setForm({ name: c.name, nameAr: c.nameAr, slug: c.slug, image: c.image, active: c.active }); setDialogOpen(true); }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,8 +39,12 @@ export default function AdminCategoriesPage() {
     setSaving(true);
     try {
       const slug = form.slug || form.name.toLowerCase().replace(/[^a-z0-9]/g, "-");
-      if (editing) { const res = await fetch(`/api/admin/categories/${editing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, slug }) }); if (res.ok) toast.success("Updated"); }
-      else { const res = await fetch("/api/admin/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...form, slug }) }); if (res.ok) toast.success("Created"); }
+      const payload = { ...form, slug };
+      const res = editing
+        ? await fetch(`/api/admin/categories/${editing.id}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+        : await fetch("/api/admin/categories", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      if (!res.ok) { toast.error(editing ? "Failed to update category" : "Failed to create category"); return; }
+      toast.success(editing ? "Updated" : "Created");
       setDialogOpen(false); refetch();
     } finally { setSaving(false); }
   }
@@ -71,7 +75,6 @@ export default function AdminCategoriesPage() {
             <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Name (Arabic)</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20" value={form.nameAr} onChange={(e) => setForm({...form, nameAr: e.target.value})} dir="rtl" /></div>
             <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Slug</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20" value={form.slug} onChange={(e) => setForm({...form, slug: e.target.value})} placeholder="Auto-generated from name" /></div>
             <ImageUpload label="Category image" value={form.image} onChange={(image) => setForm({...form, image})} />
-            <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Item count</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20" type="number" value={form.itemCount} onChange={(e) => setForm({...form, itemCount: e.target.value})} /></div>
             <div className="flex items-center justify-between rounded-lg border border-[#e6ece8] bg-[#fbfdfc] px-3 py-2.5"><div><Label htmlFor="active" className="text-[11px] font-semibold text-[#37433d]">Active category</Label><p className="mt-0.5 text-[9px] text-[#87918c]">Show this category on the storefront.</p></div><Switch id="active" checked={form.active} onCheckedChange={(active) => setForm({...form, active})} /></div>
             <DialogFooter className="border-t border-[#edf1ee] pt-4"><Button type="button" variant="outline" className="h-9 rounded-lg text-xs" onClick={() => setDialogOpen(false)}>Cancel</Button><Button type="submit" className="h-9 rounded-lg bg-[#FF2D36] text-xs hover:bg-[#e52630]" disabled={saving}>{saving ? "Saving..." : editing ? "Save changes" : "Add category"}</Button></DialogFooter>
           </form>

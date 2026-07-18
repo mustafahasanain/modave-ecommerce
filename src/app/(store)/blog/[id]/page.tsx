@@ -6,8 +6,8 @@ import { useParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Clock, ChevronRight, Calendar } from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
-import { getBlogPost, blogPosts, type BlogPost } from "@/data/blog";
-import { useBlogPost } from "@/hooks/use-blog-posts";
+import { getBlogPost, type BlogPost } from "@/data/blog";
+import { useBlogPost, useBlogPosts } from "@/hooks/use-blog-posts";
 
 function renderContent(content: string | undefined) {
   if (!content || !content.trim()) {
@@ -52,6 +52,7 @@ export default function BlogPostPage() {
   const id = Number(params.id);
   const staticPost = getBlogPost(id);
   const { post: dbPost, loading } = useBlogPost(Number.isNaN(id) ? undefined : id);
+  const { posts: blogPosts } = useBlogPosts();
 
   // Prefer DB record (it has the real content); fall back to static data.
   const post: BlogPost | undefined = dbPost ?? staticPost;

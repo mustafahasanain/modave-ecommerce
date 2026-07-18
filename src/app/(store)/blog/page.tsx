@@ -6,13 +6,14 @@ import { motion } from "framer-motion";
 import { ArrowRight, ArrowLeft, Clock, ChevronRight } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useLanguage } from "@/context/language-provider";
-import { blogPosts } from "@/data/blog";
+import { useBlogPosts } from "@/hooks/use-blog-posts";
 import { Button } from "@/components/ui/button";
 
 export default function BlogPage() {
   const { t, locale, dir } = useLanguage();
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
   const [activeCat, setActiveCat] = useState<string>("all");
+  const { posts: blogPosts } = useBlogPosts();
 
   const categories = useMemo(() => {
     const set = new Set<string>();

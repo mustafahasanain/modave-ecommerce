@@ -11,7 +11,10 @@ export async function GET(_req: NextRequest, { params }: { params: Promise<{ id:
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const body = await req.json();
-  const post = await db.blogPost.update({ where: { id: Number(id) }, data: body });
+  const post = await db.blogPost.update({
+    where: { id: Number(id) },
+    data: { ...body, readTime: body.readTime !== undefined ? Number(body.readTime) || 5 : undefined },
+  });
   return NextResponse.json({ post });
 }
 
