@@ -242,7 +242,7 @@ export function MiniCart() {
                   <div className="mt-4 grid gap-2">
                     <Button asChild className="rounded-full" onClick={() => setOpen(false)}>
                       <Link href="/checkout">
-                        {t.cart.processToCheckout}
+                        {t.common.processToCheckout}
                         <Arrow className="h-4 w-4 rtl-flip" />
                       </Link>
                     </Button>

@@ -19,6 +19,7 @@ import {
 import { useLanguage } from "@/context/language-provider";
 import { useCart } from "@/lib/cart-store";
 import { useUI } from "@/lib/ui-store";
+import { useHasMounted } from "@/hooks/use-has-mounted";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -37,7 +38,7 @@ import {
 const navItems = [
   { key: "home", href: "/" },
   { key: "shop", href: "/shop" },
-  { key: "products", href: "/shop" },
+  { key: "contact", href: "/contact" },
   { key: "blog", href: "/blog" },
 ] as const;
 
@@ -46,7 +47,7 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHasMounted();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [customer, setCustomer] = useState<{ name: string; email: string } | null>(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -55,10 +56,6 @@ export function Header() {
   const wishlist = useCart((s) => s.wishlist.length);
   const setCartOpen = useUI((s) => s.setCartOpen);
   const setCmdSearchOpen = useUI((s) => s.setSearchOpen);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -94,7 +91,7 @@ export function Header() {
   const labelMap: Record<string, string> = {
     home: t.nav.home,
     shop: t.nav.shop,
-    products: t.nav.products,
+    contact: t.common.contactUs,
     blog: t.nav.blog,
   };
 
@@ -175,7 +172,7 @@ export function Header() {
               (item.key === "home" && pathname === "/") ||
               (item.key === "shop" && pathname === "/shop") ||
               (item.key === "blog" && pathname === "/blog") ||
-              (item.key === "pages" && pathname === "/collections");
+              (item.key === "contact" && pathname === "/contact");
 
             return (
               <Link

@@ -31,6 +31,21 @@ ADMIN_EMAIL="admin@modave.com"
 ADMIN_PASSWORD="admin123"
 ```
 
+Also set two session-signing secrets (the app throws at startup in production if
+these are missing; a dev-only fallback is used otherwise):
+
+```env
+# Generate with: openssl rand -hex 32
+ADMIN_SESSION_SECRET="..."
+CUSTOMER_SESSION_SECRET="..."
+```
+
+And optionally the public site URL (used for `sitemap.xml` and product OpenGraph/canonical URLs):
+
+```env
+NEXT_PUBLIC_SITE_URL="http://localhost:3000"
+```
+
 ## Development
 
 ```bash

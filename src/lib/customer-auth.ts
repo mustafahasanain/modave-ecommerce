@@ -2,7 +2,19 @@ import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 
 const COOKIE_NAME = "modave_customer_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
-const SESSION_SECRET = process.env.CUSTOMER_SESSION_SECRET || process.env.ADMIN_PASSWORD || "modave-development-session-secret";
+
+function getSessionSecret(): string {
+  const secret = process.env.CUSTOMER_SESSION_SECRET;
+  if (secret) return secret;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "CUSTOMER_SESSION_SECRET must be set in production. Generate one with `openssl rand -hex 32`."
+    );
+  }
+  return "modave-development-only-customer-secret-do-not-use-in-production";
+}
+
+const SESSION_SECRET = getSessionSecret();
 
 export function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");

@@ -16,6 +16,7 @@ export async function GET(req: NextRequest) {
     const products = await db.product.findMany({
       where,
       orderBy: { id: "asc" },
+      take: 1000,
     });
 
     const parsed = products.map((p) => ({

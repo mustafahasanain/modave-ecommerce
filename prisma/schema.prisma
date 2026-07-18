@@ -45,6 +45,8 @@ model Product {
 model Order {
   id              String        @id @default(cuid())
   orderNumber     String        @unique
+  customerId      String?
+  customer        Customer?     @relation(fields: [customerId], references: [id])
   customerName    String
   customerEmail   String
   customerPhone   String?
@@ -65,6 +67,7 @@ model Order {
 
   @@index([status])
   @@index([createdAt])
+  @@index([customerId])
 }
 
 model Customer {
@@ -79,6 +82,7 @@ model Customer {
   notes     String?
   joinedAt  DateTime @default(now())
   createdAt DateTime @default(now())
+  orderHistory Order[]
 
   @@index([tier])
 }
@@ -105,9 +109,11 @@ model Review {
   title     String?
   body      String
   verified  Boolean  @default(false)
+  status    String   @default("pending") // pending | approved | rejected
   createdAt DateTime @default(now())
 
   @@index([productId])
+  @@index([status])
 }
 
 model BlogPost {

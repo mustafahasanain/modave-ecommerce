@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { parseJson, productUpdateSchema } from "@/lib/validation";
 
 // GET /api/admin/products/[id] — single product
 export async function GET(
@@ -31,23 +32,26 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const parsed = await parseJson(req, productUpdateSchema);
+  if (parsed.error) return parsed.error;
+  const body = parsed.data;
+
   try {
     const { id } = await params;
-    const body = await req.json();
     const update: Record<string, unknown> = {};
     if (body.name != null) update.name = body.name;
     if (body.nameAr != null) update.nameAr = body.nameAr;
     if (body.category != null) update.category = body.category;
     if (body.categoryAr != null) update.categoryAr = body.categoryAr;
-    if (body.price != null) update.price = Number(body.price);
-    if (body.stock != null) update.stock = Number(body.stock);
+    if (body.price != null) update.price = body.price;
+    if (body.stock != null) update.stock = body.stock;
     if (body.status != null) update.status = body.status;
     if (body.description != null) update.description = body.description;
     if (body.descriptionAr != null) update.descriptionAr = body.descriptionAr;
     if (body.images != null) update.images = JSON.stringify(body.images);
     if (body.colors != null) update.colors = JSON.stringify(body.colors);
     if (body.sizes != null) update.sizes = JSON.stringify(body.sizes);
-    if (body.discount != null) update.discount = Number(body.discount);
+    if (body.discount != null) update.discount = body.discount;
     if (body.featured != null) update.featured = body.featured;
     if (body.bestSeller != null) update.bestSeller = body.bestSeller;
     if (body.newArrival != null) update.newArrival = body.newArrival;

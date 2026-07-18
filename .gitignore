@@ -26,9 +26,11 @@ Thumbs.db
 # Claude Code local worktrees & session data
 .claude/
 
-# Local dev database
-prisma/*.db
-prisma/*.db-journal
+# Local dev database (matches prisma/db/custom.db and any nested db dirs)
+prisma/**/*.db
+prisma/**/*.db-journal
+prisma/**/*.sqlite
+prisma/**/*.sqlite-journal
 
 # TypeScript incremental build cache
 *.tsbuildinfo

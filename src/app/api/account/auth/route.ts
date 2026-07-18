@@ -7,6 +7,8 @@ import {
   hashPassword,
   verifyPassword,
 } from "@/lib/customer-auth";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { accountAuthSchema, parseJson } from "@/lib/validation";
 
 const publicCustomer = (customer: { id: string; name: string; email: string; phone: string | null }) => ({
   id: customer.id,
@@ -27,13 +29,16 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
-  try {
-    const { action, name, email, password } = await request.json();
-    const normalizedEmail = typeof email === "string" ? email.trim().toLowerCase() : "";
+  if (!rateLimit(`account-auth:${getClientIp(request)}`, 10, 15 * 60 * 1000)) {
+    return NextResponse.json({ error: "Too many attempts. Try again later." }, { status: 429 });
+  }
 
-    if (!normalizedEmail || typeof password !== "string" || password.length < 8) {
-      return NextResponse.json({ error: "Enter a valid email and a password of at least 8 characters." }, { status: 400 });
-    }
+  const parsed = await parseJson(request, accountAuthSchema);
+  if (parsed.error) return parsed.error;
+  const { action, name, email, password } = parsed.data;
+
+  try {
+    const normalizedEmail = email.trim().toLowerCase();
 
     let customer;
     if (action === "signup") {

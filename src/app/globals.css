@@ -81,6 +81,7 @@
   --sidebar-ring: oklch(0.5 0.01 60);
 }
 
+/* Dark theme disabled — storefront is light-only for now.
 .dark {
   --background: oklch(0.16 0.006 60);
   --foreground: oklch(0.96 0.004 80);
@@ -110,6 +111,7 @@
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.6 0.01 60);
 }
+*/
 
 /* The administration workspace intentionally stays light and neutral so its
    dense data views retain the same contrast regardless of the storefront theme. */
@@ -132,7 +134,6 @@
   --input: #e3e9e5;
   --ring: #FF2D36;
   color-scheme: light;
-  font-family: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
 }
 
 

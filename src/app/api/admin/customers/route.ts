@@ -6,6 +6,7 @@ export async function GET() {
   try {
     const customers = await db.customer.findMany({
       orderBy: { joinedAt: "desc" },
+      take: 1000,
     });
     return NextResponse.json({ customers });
   } catch (e) {

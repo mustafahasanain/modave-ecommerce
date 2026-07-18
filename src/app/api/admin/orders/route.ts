@@ -10,6 +10,7 @@ export async function GET(req: NextRequest) {
     const orders = await db.order.findMany({
       where,
       orderBy: { createdAt: "desc" },
+      take: 1000,
     });
     return NextResponse.json({ orders });
   } catch (e) {

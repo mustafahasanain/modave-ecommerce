@@ -156,7 +156,9 @@ export default function CheckoutPage() {
     setVoucherInput("");
   };
 
-  const handlePlaceOrder = () => {
+  const [placingOrder, setPlacingOrder] = useState(false);
+
+  const handlePlaceOrder = async () => {
     // Validate required fields
     const missing = required.filter((k) => !form[k].trim());
     setTouched(
@@ -179,18 +181,6 @@ export default function CheckoutPage() {
       return;
     }
 
-    // Capture order snapshot BEFORE clearing the cart
-    const orderItems: PlacedOrderItem[] = items.map((i) => ({
-      id: i.id,
-      name: i.name,
-      price: i.price,
-      image: i.image,
-      size: i.size,
-      color: i.color,
-      quantity: i.quantity,
-    }));
-    const now = new Date();
-    const delivery = new Date(now.getTime() + 6 * 24 * 60 * 60 * 1000); // +6 days
     const orderNumber = createOrderNumber();
     const customer = {
       firstName: form.firstName,
@@ -204,41 +194,58 @@ export default function CheckoutPage() {
       note: form.note,
     };
 
-    setLastOrder({
-      orderNumber,
-      date: now.toISOString(),
-      items: orderItems,
-      subtotal,
-      discount,
-      shipping,
-      total,
-      customer,
-      paymentMethod,
-      estimatedDelivery: delivery.toISOString(),
-    });
+    setPlacingOrder(true);
+    try {
+      // The server recomputes prices, discount, and totals from the database
+      // and enforces stock availability — the values below are for optimistic
+      // UI only; what actually gets billed/stored comes back in the response.
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderNumber,
+          customer,
+          couponCode: coupon,
+          paymentMethod,
+          items: items.map((i) => ({
+            id: i.id,
+            size: i.size,
+            color: i.color,
+            quantity: i.quantity,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast.error(data.error || (locale === "ar" ? "تعذر إتمام الطلب" : "Could not place order"));
+        return;
+      }
 
-    // Persist the order to the database (fire-and-forget; don't block redirect on failure)
-    fetch("/api/orders", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        orderNumber,
-        customer,
+      const orderItems: PlacedOrderItem[] = data.order.items;
+      setLastOrder({
+        orderNumber: data.order.orderNumber,
+        date: data.order.createdAt,
         items: orderItems,
-        subtotal,
-        discount,
-        shipping,
-        total,
+        subtotal: data.order.subtotal,
+        discount: data.order.discount,
+        shipping: data.order.shipping,
+        total: data.order.total,
+        customer,
         paymentMethod,
-        estimatedDelivery: delivery.toISOString(),
-      }),
-    }).catch((e) => console.error("Failed to persist order:", e));
+        estimatedDelivery: data.order.estimatedDelivery,
+      });
 
-    clearCart();
-    toast.success(
-      locale === "ar" ? "تم تأكيد الطلب بنجاح!" : "Order placed successfully!"
-    );
-    router.push("/order-confirmation");
+      clearCart();
+      toast.success(
+        locale === "ar" ? "تم تأكيد الطلب بنجاح!" : "Order placed successfully!"
+      );
+      router.push("/order-confirmation");
+    } catch (e) {
+      console.error("Failed to place order:", e);
+      toast.error(locale === "ar" ? "تعذر إتمام الطلب" : "Could not place order");
+    } finally {
+      setPlacingOrder(false);
+    }
   };
 
   return (
@@ -686,9 +693,12 @@ export default function CheckoutPage() {
                   size="lg"
                   className="mt-5 w-full rounded-full"
                   onClick={handlePlaceOrder}
+                  disabled={placingOrder}
                 >
                   <Lock className="h-4 w-4" />
-                  {t.checkout.placeOrder}
+                  {placingOrder
+                    ? locale === "ar" ? "جارٍ المعالجة..." : "Processing..."
+                    : t.checkout.placeOrder}
                 </Button>
 
                 {/* Trust */}

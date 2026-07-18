@@ -391,28 +391,36 @@ export default function HomePage() {
 }
 
 function TestimonialsRedesign() {
+  const { locale } = useLanguage();
+  const ar = locale === "ar";
   const [active, setActive] = useState(0);
   const testimonials = [
     {
-      text: "Fantastic shop! Great selection, fair prices, and friendly staff. Highly recommended. The quality of the products is exceptional, and the prices are very reasonable!",
-      name: "Sybil Sharp",
-      product: "Contrasting sheepskin sweatshirt",
+      text: ar
+        ? "متجر رائع! تشكيلة ممتازة وأسعار عادلة وطاقم ودود. أنصح به بشدة. جودة المنتجات استثنائية والأسعار معقولة جداً!"
+        : "Fantastic shop! Great selection, fair prices, and friendly staff. Highly recommended. The quality of the products is exceptional, and the prices are very reasonable!",
+      name: ar ? "سارة الحمد" : "Sybil Sharp",
+      product: ar ? "سترة جلد الغنم المتباينة" : "Contrasting sheepskin sweatshirt",
       price: "$60.00",
       image: "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=85",
       productImage: "https://images.unsplash.com/photo-1496747611176-843222e1e57c?auto=format&fit=crop&w=120&q=85",
     },
     {
-      text: "I absolutely love this shop! The products are high-quality and the customer service is excellent. I always leave with exactly what I need and a smile on my face.",
-      name: "Mark G.",
-      product: "Contrasting sheepskin sweatshirt",
+      text: ar
+        ? "أحب هذا المتجر كثيراً! المنتجات عالية الجودة وخدمة العملاء ممتازة. أخرج دائماً بما أحتاجه بالضبط وابتسامة على وجهي."
+        : "I absolutely love this shop! The products are high-quality and the customer service is excellent. I always leave with exactly what I need and a smile on my face.",
+      name: ar ? "محمد العتيبي" : "Mark G.",
+      product: ar ? "سترة جلد الغنم المتباينة" : "Contrasting sheepskin sweatshirt",
       price: "$60.00",
       image: "https://images.unsplash.com/photo-1516826957135-700dedea698c?auto=format&fit=crop&w=800&q=85",
       productImage: "https://images.unsplash.com/photo-1516257984-b1b4d707412e?auto=format&fit=crop&w=120&q=85",
     },
     {
-      text: "Beautiful packaging, fast delivery, and the fabric quality exceeded my expectations. Modave has become my go-to for elegant everyday pieces.",
-      name: "Elena R.",
-      product: "Belted Manteco coat",
+      text: ar
+        ? "تغليف جميل وتوصيل سريع، وجودة القماش فاقت توقعاتي. أصبح موديف وجهتي المفضلة للقطع الأنيقة اليومية."
+        : "Beautiful packaging, fast delivery, and the fabric quality exceeded my expectations. Modave has become my go-to for elegant everyday pieces.",
+      name: ar ? "نور الزهراني" : "Elena R.",
+      product: ar ? "معطف مانتيكو بحزام" : "Belted Manteco coat",
       price: "$219.99",
       image: "https://images.unsplash.com/photo-1485968579580-b6d095142e6e?auto=format&fit=crop&w=800&q=85",
       productImage: "https://images.unsplash.com/photo-1548624149-fb5aefb2f732?auto=format&fit=crop&w=120&q=85",
@@ -426,10 +434,12 @@ function TestimonialsRedesign() {
       <div className="mx-auto max-w-7xl px-4 py-16 sm:py-20 lg:py-24">
         <div className="mb-10 text-center sm:mb-11">
           <h2 className="font-display text-3xl font-medium tracking-tight text-foreground sm:text-4xl">
-            Customer Say!
+            {ar ? "!آراء عملائنا" : "Customer Say!"}
           </h2>
           <p className="mt-3 text-sm text-muted-foreground sm:text-base">
-            Our customers adore our products, and we constantly aim to delight them.
+            {ar
+              ? "عملاؤنا يعشقون منتجاتنا، ونسعى دائماً لإسعادهم."
+              : "Our customers adore our products, and we constantly aim to delight them."}
           </p>
         </div>
 

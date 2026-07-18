@@ -480,7 +480,7 @@ export default function CartPage() {
                 {/* Checkout button */}
                 <Button asChild size="lg" className="mt-5 w-full rounded-full">
                   <Link href="/checkout">
-                    {t.cart.processToCheckout}
+                    {t.common.processToCheckout}
                     <Arrow className="h-4 w-4 rtl-flip" />
                   </Link>
                 </Button>

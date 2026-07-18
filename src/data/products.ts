@@ -22,6 +22,7 @@ export interface Product {
   featured?: boolean;
   bestSeller?: boolean;
   newArrival?: boolean;
+  status?: "active" | "draft";
 }
 
 // Curated Unsplash fashion photography (stable photo IDs)

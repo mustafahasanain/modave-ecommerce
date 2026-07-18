@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { parseJson, productCreateSchema } from "@/lib/validation";
 
 // GET /api/admin/products — list all products
 export async function GET() {
   try {
     const products = await db.product.findMany({
       orderBy: { id: "asc" },
+      take: 1000,
     });
     // Deserialize JSON fields
     const parsed = products.map((p) => ({
@@ -23,48 +25,40 @@ export async function GET() {
 
 // POST /api/admin/products — create a new product
 export async function POST(req: NextRequest) {
+  const parsed = await parseJson(req, productCreateSchema);
+  if (parsed.error) return parsed.error;
+  const body = parsed.data;
+
   try {
-    const body = await req.json();
-    const {
-      name,
-      nameAr,
-      category,
-      categoryAr,
-      price,
-      stock,
-      status,
-    } = body;
+    // Generate a new id inside a transaction so two concurrent creates can't
+    // read the same max(id) and collide on the primary key.
+    const product = await db.$transaction(async (tx) => {
+      const maxRow = await tx.product.aggregate({ _max: { id: true } });
+      const newId = (maxRow._max.id ?? 0) + 1;
+      const sku = `MDV-${String(Date.now()).slice(-6)}`;
 
-    if (!name || !category || price == null) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
-    }
-
-    // Generate a new id (max + 1)
-    const maxRow = await db.product.aggregate({ _max: { id: true } });
-    const newId = (maxRow._max.id ?? 0) + 1;
-    const sku = `MDV-${String(Date.now()).slice(-6)}`;
-
-    const product = await db.product.create({
-      data: {
-        id: newId,
-        name,
-        nameAr: nameAr || name,
-        category,
-        categoryAr: categoryAr || category,
-        price: Number(price),
-        stock: Number(stock) || 0,
-        status: status || "active",
-        sku,
-        vendor: "Modave",
-        description: body.description || "",
-        descriptionAr: body.descriptionAr || body.description || "",
-        images: JSON.stringify(body.images || []),
-        colors: JSON.stringify(body.colors || []),
-        sizes: JSON.stringify(body.sizes || []),
-        rating: 0,
-        reviews: 0,
-        sold: 0,
-      },
+      return tx.product.create({
+        data: {
+          id: newId,
+          name: body.name,
+          nameAr: body.nameAr || body.name,
+          category: body.category,
+          categoryAr: body.categoryAr || body.category,
+          price: body.price,
+          stock: body.stock,
+          status: body.status,
+          sku,
+          vendor: "Modave",
+          description: body.description,
+          descriptionAr: body.descriptionAr || body.description,
+          images: JSON.stringify(body.images),
+          colors: JSON.stringify(body.colors),
+          sizes: JSON.stringify(body.sizes),
+          rating: 0,
+          reviews: 0,
+          sold: 0,
+        },
+      });
     });
 
     return NextResponse.json({ product }, { status: 201 });

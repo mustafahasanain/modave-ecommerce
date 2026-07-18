@@ -88,7 +88,11 @@ export function ReviewsSection({ productId, productRating, productReviewsCount }
     });
     setSubmitting(false);
     if (ok) {
-      toast.success(ar ? "شكراً! تم نشر تعليقك" : "Thank you! Your review has been posted");
+      toast.success(
+        ar
+          ? "شكراً! سيظهر تعليقك بعد المراجعة"
+          : "Thank you! Your review will appear after moderation."
+      );
       setForm({ author: "", email: "", rating: 5, title: "", body: "" });
       setShowForm(false);
     } else {

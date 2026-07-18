@@ -19,7 +19,7 @@ export default function BlogPage() {
     const set = new Set<string>();
     blogPosts.forEach((p) => set.add(locale === "ar" ? p.categoryAr : p.category));
     return ["all", ...Array.from(set)];
-  }, [locale]);
+  }, [locale, blogPosts]);
 
   const featured = blogPosts.filter((p) => p.featured);
   const filtered =

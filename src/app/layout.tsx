@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { Cairo, Kumbh_Sans, Cormorant_Garamond } from "next/font/google";
+import { cookies } from "next/headers";
+import { Kumbh_Sans, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -19,12 +20,6 @@ const cormorant = Cormorant_Garamond({
   display: "swap",
 });
 
-const cairo = Cairo({
-  variable: "--font-cairo",
-  subsets: ["latin", "arabic"],
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "Modave — Elegant Fashion eCommerce",
   description:
@@ -35,23 +30,28 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const locale = cookieStore.get("modave_locale")?.value === "ar" ? "ar" : "en";
+  const dir = locale === "ar" ? "rtl" : "ltr";
+
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
+    <html lang={locale} dir={dir} suppressHydrationWarning>
       <body
-        className={`${kumbhSans.variable} ${cormorant.variable} ${cairo.variable} antialiased bg-background text-foreground`}
+        className={`${kumbhSans.variable} ${cormorant.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"
           defaultTheme="light"
+          forcedTheme="light"
           enableSystem={false}
           disableTransitionOnChange
         >
-          <LanguageProvider>
+          <LanguageProvider initialLocale={locale}>
             {children}
             <Toaster />
             <SonnerToaster position="top-center" richColors />

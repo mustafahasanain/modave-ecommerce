@@ -13,15 +13,23 @@ interface LanguageContextValue {
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
 
-function getInitialLocale(): Locale {
-  if (typeof window === "undefined") return "en";
-  const saved = localStorage.getItem("locale");
-  return saved === "ar" || saved === "en" ? (saved as Locale) : "en";
-}
+const LOCALE_COOKIE = "modave_locale";
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  // lazy initializer reads localStorage once on client mount (avoids SSR mismatch + effect setState)
-  const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+export function LanguageProvider({
+  children,
+  initialLocale = "en",
+}: {
+  children: React.ReactNode;
+  /**
+   * The locale the root layout resolved server-side (from the same cookie),
+   * used to render text content. Must match what the server rendered — the
+   * dictionary (t.*), unlike the html lang/dir attributes, is part of the
+   * hydrated tree, so seeding client state from anything else (e.g.
+   * localStorage) causes a hydration mismatch on the first render.
+   */
+  initialLocale?: Locale;
+}) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale);
 
   // sync html dir/lang + persist (this effect updates an external system, which is allowed)
   useEffect(() => {
@@ -29,6 +37,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     document.documentElement.lang = locale;
     document.documentElement.dir = dir;
     localStorage.setItem("locale", locale);
+    document.cookie = `${LOCALE_COOKIE}=${locale}; path=/; max-age=31536000; samesite=lax`;
   }, [locale]);
 
   const setLocale = useCallback((l: Locale) => setLocaleState(l), []);
