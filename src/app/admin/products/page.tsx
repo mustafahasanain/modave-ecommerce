@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Plus, Search, Pencil, Trash2, Package as PackageIcon } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Package as PackageIcon, Boxes } from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { type Product } from "@/data/products";
 import { formatPrice } from "@/lib/format";
@@ -151,10 +151,10 @@ export default function AdminProductsPage() {
     }
     setSaving(true);
     try {
-      // Build the images array: use the provided URL, or a placeholder
+      // Store only an image deliberately selected by the administrator.
       const images = form.imageUrl.trim()
         ? [form.imageUrl.trim()]
-        : ["https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&q=80"];
+        : [];
       const payload = {
         name: form.name,
         price: Number(form.price),
@@ -189,24 +189,23 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto w-full max-w-[1500px] space-y-4">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between"
+        className="flex flex-col gap-4 rounded-xl border border-[#e6ece8] bg-white px-4 py-4 shadow-[0_5px_18px_rgba(27,61,46,0.03)] sm:flex-row sm:items-center sm:justify-between sm:px-5"
       >
-        <div>
-          <span className="text-[11px] uppercase tracking-[0.2em] text-muted-foreground">
-            {t.admin.dashboard}
-          </span>
-          <h1 className="mt-1 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            {t.admin.products}
-          </h1>
+        <div className="flex items-center gap-3">
+          <span className="flex size-10 items-center justify-center rounded-xl bg-[#fff0f1] text-[#FF2D36]"><Boxes className="size-5" /></span>
+          <div>
+            <h1 className="text-[14px] font-semibold text-[#1b241f]">{t.admin.products}</h1>
+            <p className="mt-0.5 text-[10px] text-[#87918c]">Manage your catalog, inventory, and product availability.</p>
+          </div>
         </div>
-        <Button onClick={openAdd} className="gap-2">
-          <Plus className="size-4" />
+        <Button onClick={openAdd} className="h-9 rounded-lg bg-[#FF2D36] px-3.5 text-[11px] font-semibold text-white hover:bg-[#e52630]">
+          <Plus className="size-3.5" />
           {t.admin.addProduct}
         </Button>
       </motion.div>
@@ -217,23 +216,23 @@ export default function AdminProductsPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <Card>
-          <CardHeader className="flex-row items-center justify-between space-y-0 gap-4 flex-wrap">
-            <CardTitle className="font-display text-xl">
+          <Card className="overflow-hidden rounded-xl border-[#e6ece8] shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
+          <CardHeader className="flex-row items-center justify-between space-y-0 gap-4 border-b border-[#edf1ee] px-4 py-4 sm:flex-nowrap sm:px-5">
+            <CardTitle className="text-[13px] font-semibold text-[#1b241f]">
               {locale === "ar" ? "كل المنتجات" : "All Products"}
               <span className="ms-2 text-sm font-normal text-muted-foreground">
                 ({filtered.length})
               </span>
             </CardTitle>
             <div className="relative w-full sm:w-72">
-              <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Search className="pointer-events-none absolute top-1/2 left-3 size-3.5 -translate-y-1/2 text-[#8c9691]" />
               <Input
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
                 placeholder={
                   locale === "ar" ? "بحث عن منتج..." : "Search products..."
                 }
-                className="ps-9"
+                className="h-9 rounded-lg border-[#dfe8e2] bg-white ps-9 text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20"
               />
             </div>
           </CardHeader>
@@ -266,7 +265,7 @@ export default function AdminProductsPage() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={`skel-${i}`}>
-                        <TableCell colSpan={6} className="py-4">
+                          <TableCell colSpan={6} className="py-4">
                           <div className="flex items-center gap-3">
                             <div className="size-11 shrink-0 animate-pulse rounded-md bg-secondary" />
                             <div className="flex-1 space-y-2">
@@ -295,17 +294,21 @@ export default function AdminProductsPage() {
                       const name = locale === "ar" ? p.nameAr : p.name;
                       const status = (p.status as "active" | "draft") || (p.id % 3 === 0 ? "draft" : "active");
                       return (
-                        <TableRow key={p.id} className="text-sm">
+                        <TableRow key={p.id} className="text-[11px] hover:bg-[#fffafb]">
                           <TableCell className="ps-6">
                             <div className="flex items-center gap-3">
-                              <div className="relative size-11 shrink-0 overflow-hidden rounded-md bg-secondary">
-                                <Image
-                                  src={p.images[0]}
-                                  alt={name}
-                                  fill
-                                  sizes="44px"
-                                  className="object-cover"
-                                />
+                              <div className="relative flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[#f1f4f2] text-[#9ba59f]">
+                                {p.images?.[0] ? (
+                                  <Image
+                                    src={p.images[0]}
+                                    alt={name}
+                                    fill
+                                    sizes="44px"
+                                    className="object-cover"
+                                  />
+                                ) : (
+                                  <PackageIcon className="size-4" strokeWidth={1.5} />
+                                )}
                               </div>
                               <div className="min-w-0">
                                 <p className="truncate font-medium">{name}</p>
@@ -333,14 +336,7 @@ export default function AdminProductsPage() {
                             </span>
                           </TableCell>
                           <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={
-                                status === "active"
-                                  ? "border-transparent bg-foreground/5 text-foreground"
-                                  : "border-transparent bg-secondary text-muted-foreground"
-                              }
-                            >
+                            <Badge variant="outline" className={status === "active" ? "border-transparent bg-[#fff0f1] text-[#FF2D36] text-[9px]" : "border-transparent bg-[#f1f4f2] text-[#748078] text-[9px]"}>
                               {status === "active" ? t.admin.active : t.admin.draft}
                             </Badge>
                           </TableCell>
@@ -349,7 +345,7 @@ export default function AdminProductsPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="size-8"
+                                className="size-8 rounded-lg hover:bg-[#fff0f1] hover:text-[#FF2D36]"
                                 onClick={() => openEdit(p)}
                                 aria-label="Edit product"
                               >
@@ -358,7 +354,7 @@ export default function AdminProductsPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="size-8 text-muted-foreground hover:text-destructive"
+                                className="size-8 rounded-lg text-muted-foreground hover:bg-[#fff0f1] hover:text-[#FF2D36]"
                                 onClick={() => setDeleteTarget(p)}
                                 aria-label="Delete product"
                               >
@@ -375,7 +371,7 @@ export default function AdminProductsPage() {
             </div>
 
             {/* Pagination */}
-            <div className="flex items-center justify-between gap-3 border-t px-6 py-4">
+            <div className="flex items-center justify-between gap-3 border-t border-[#edf1ee] px-4 py-3 sm:px-5">
               <p className="text-xs text-muted-foreground">
                 {locale === "ar"
                   ? `صفحة ${currentPage} من ${totalPages}`
@@ -410,9 +406,9 @@ export default function AdminProductsPage() {
 
       {/* Add / Edit dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl">
+        <DialogContent className="max-h-[90vh] overflow-y-auto rounded-2xl border-[#e6ece8] p-5 shadow-2xl sm:max-w-[620px]">
+          <DialogHeader className="pe-8">
+            <DialogTitle className="text-[15px] font-semibold">
               {editing ? t.admin.editProduct : t.admin.addProduct}
             </DialogTitle>
             <DialogDescription>
@@ -421,9 +417,9 @@ export default function AdminProductsPage() {
                 : "Fill in the product details below."}
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label htmlFor="p-name" className="text-xs uppercase tracking-widest">
+              <Label htmlFor="p-name" className="text-[10px] font-semibold text-[#56615b]">
                 {t.admin.name}
               </Label>
               <Input
@@ -432,11 +428,12 @@ export default function AdminProductsPage() {
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
                 placeholder={locale === "ar" ? "اسم المنتج" : "Product name"}
                 required
+                className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20"
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="p-price" className="text-xs uppercase tracking-widest">
+                <Label htmlFor="p-price" className="text-[10px] font-semibold text-[#56615b]">
                   {t.admin.price}
                 </Label>
                 <Input
@@ -448,10 +445,11 @@ export default function AdminProductsPage() {
                   onChange={(e) => setForm({ ...form, price: e.target.value })}
                   placeholder="0.00"
                   required
+                  className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="p-stock" className="text-xs uppercase tracking-widest">
+                <Label htmlFor="p-stock" className="text-[10px] font-semibold text-[#56615b]">
                   {t.admin.stock}
                 </Label>
                 <Input
@@ -462,19 +460,20 @@ export default function AdminProductsPage() {
                   onChange={(e) => setForm({ ...form, stock: e.target.value })}
                   placeholder="0"
                   required
+                  className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20"
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest">
+                <Label className="text-[10px] font-semibold text-[#56615b]">
                   {t.admin.categories}
                 </Label>
                 <Select
                   value={form.category}
                   onValueChange={(v) => setForm({ ...form, category: v })}
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full rounded-lg border-[#dfe8e2] text-xs shadow-none">
                     <SelectValue placeholder="Category" />
                   </SelectTrigger>
                   <SelectContent>
@@ -487,7 +486,7 @@ export default function AdminProductsPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-widest">
+                <Label className="text-[10px] font-semibold text-[#56615b]">
                   {t.admin.status}
                 </Label>
                 <Select
@@ -496,7 +495,7 @@ export default function AdminProductsPage() {
                     setForm({ ...form, status: v as "active" | "draft" })
                   }
                 >
-                  <SelectTrigger className="w-full">
+                  <SelectTrigger className="h-10 w-full rounded-lg border-[#dfe8e2] text-xs shadow-none">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -515,7 +514,7 @@ export default function AdminProductsPage() {
 
             {/* Image URL with live preview */}
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-widest">
+              <Label className="text-[10px] font-semibold text-[#56615b]">
                 {locale === "ar" ? "رابط الصورة" : "Image URL"}
               </Label>
               <div className="flex items-center gap-3">
@@ -536,7 +535,7 @@ export default function AdminProductsPage() {
                   value={form.imageUrl}
                   onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
                   placeholder="https://images.unsplash.com/..."
-                  className="flex-1 text-sm"
+                  className="h-10 flex-1 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20"
                 />
               </div>
               <p className="text-[10px] text-muted-foreground">
@@ -548,7 +547,7 @@ export default function AdminProductsPage() {
 
             {/* Description */}
             <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-widest">
+              <Label className="text-[10px] font-semibold text-[#56615b]">
                 {locale === "ar" ? "الوصف" : "Description"}
               </Label>
               <Textarea
@@ -560,10 +559,10 @@ export default function AdminProductsPage() {
                     : "A short product description..."
                 }
                 rows={3}
-                className="text-sm"
+                className="rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20"
               />
             </div>
-            <DialogFooter className="pt-2">
+            <DialogFooter className="border-t border-[#edf1ee] pt-4">
               <Button
                 type="button"
                 variant="outline"

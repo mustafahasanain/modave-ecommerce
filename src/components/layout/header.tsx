@@ -46,6 +46,7 @@ export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const [scrolled, setScrolled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [customer, setCustomer] = useState<{ name: string; email: string } | null>(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -54,6 +55,10 @@ export function Header() {
   const wishlist = useCart((s) => s.wishlist.length);
   const setCartOpen = useUI((s) => s.setCartOpen);
   const setCmdSearchOpen = useUI((s) => s.setSearchOpen);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20);
@@ -272,7 +277,7 @@ export function Header() {
             className="relative hidden size-9 items-center justify-center text-[#141414] transition-colors hover:text-[#ff2d36] sm:flex lg:size-10"
           >
             <Heart className="h-[24px] w-[24px] stroke-[2.25]" />
-            {wishlist > 0 && (
+            {mounted && wishlist > 0 && (
               <span className="absolute -top-0.5 -end-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff2d36] px-1 text-[10px] font-bold leading-none text-white">
                 {wishlist}
               </span>
@@ -285,9 +290,11 @@ export function Header() {
             className="relative flex size-9 items-center justify-center text-[#141414] transition-colors hover:text-[#ff2d36] lg:size-10"
           >
             <ShoppingBag className="h-[23px] w-[23px] stroke-[2.25]" />
-            <span className="absolute -top-0.5 -end-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff2d36] px-1 text-[10px] font-bold leading-none text-white">
-              {count}
-            </span>
+            {mounted && (
+              <span className="absolute -top-0.5 -end-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#ff2d36] px-1 text-[10px] font-bold leading-none text-white">
+                {count}
+              </span>
+            )}
           </button>
         </div>
       </div>

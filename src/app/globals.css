@@ -53,8 +53,8 @@
   --card-foreground: oklch(0.18 0.008 60);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.008 60);
-  --primary: oklch(0.2 0.006 60);
-  --primary-foreground: oklch(0.99 0.004 80);
+  --primary: #FF2D36;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.96 0.006 80);
   --secondary-foreground: oklch(0.2 0.006 60);
   --muted: oklch(0.965 0.005 80);
@@ -88,8 +88,8 @@
   --card-foreground: oklch(0.96 0.004 80);
   --popover: oklch(0.21 0.006 60);
   --popover-foreground: oklch(0.96 0.004 80);
-  --primary: oklch(0.95 0.004 80);
-  --primary-foreground: oklch(0.18 0.008 60);
+  --primary: #FF2D36;
+  --primary-foreground: #ffffff;
   --secondary: oklch(0.27 0.006 60);
   --secondary-foreground: oklch(0.96 0.004 80);
   --muted: oklch(0.27 0.006 60);
@@ -110,6 +110,31 @@
   --sidebar-border: oklch(1 0 0 / 12%);
   --sidebar-ring: oklch(0.6 0.01 60);
 }
+
+/* The administration workspace intentionally stays light and neutral so its
+   dense data views retain the same contrast regardless of the storefront theme. */
+.admin-dashboard-theme {
+  --background: #ffffff;
+  --foreground: #17201c;
+  --card: #ffffff;
+  --card-foreground: #17201c;
+  --popover: #ffffff;
+  --popover-foreground: #17201c;
+  --primary: #FF2D36;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f7f4;
+  --secondary-foreground: #26312b;
+  --muted: #f1f5f2;
+  --muted-foreground: #77827c;
+  --accent: #fff0f1;
+  --accent-foreground: #e52630;
+  --border: #e6ece8;
+  --input: #e3e9e5;
+  --ring: #FF2D36;
+  color-scheme: light;
+  font-family: var(--font-cairo), ui-sans-serif, system-ui, sans-serif;
+}
+
 
 @layer base {
   * {

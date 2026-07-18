@@ -54,7 +54,7 @@ export default function AdminReviewsPage() {
               reviews.map(r => (
                 <TableRow key={r.id} className="text-sm">
                   <TableCell className="ps-6 font-medium">{r.productName}</TableCell>
-                  <TableCell>{r.author}{r.verified && <Badge variant="outline" className="ms-1 border-transparent bg-emerald-50 text-emerald-600 text-[9px]">Verified</Badge>}</TableCell>
+                  <TableCell>{r.author}{r.verified && <Badge variant="outline" className="ms-1 border-transparent bg-[#fff0f1] text-[#FF2D36] text-[9px]">Verified</Badge>}</TableCell>
                   <TableCell><div className="flex gap-0.5">{Array.from({length:5}).map((_,i)=><Star key={i} className={`size-3 ${i < r.rating ? "fill-amber-400 text-amber-400" : "text-border"}`} />)}</div></TableCell>
                   <TableCell className="max-w-xs"><p className="truncate">{r.title && <span className="font-medium">{r.title}: </span>}{r.body}</p></TableCell>
                   <TableCell><Select value={r.status} onValueChange={(v) => updateStatus(r.id, v)}><SelectTrigger className="h-7 w-28 text-xs"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="approved">Approved</SelectItem><SelectItem value="pending">Pending</SelectItem><SelectItem value="rejected">Rejected</SelectItem></SelectContent></Select></TableCell>

@@ -26,7 +26,7 @@ import {
 import { useLanguage } from "@/context/language-provider";
 import { useCart } from "@/lib/cart-store";
 import { useUI } from "@/lib/ui-store";
-import { getProduct, getRelated, products, type Product } from "@/data/products";
+import { getProduct, products, type Product } from "@/data/products";
 import { useProducts } from "@/hooks/use-products";
 import { formatPrice } from "@/lib/format";
 import { ProductCard } from "@/components/product/product-card";
@@ -84,16 +84,16 @@ export default function ProductDetailPage() {
   const category = locale === "ar" ? product.categoryAr : product.category;
   const description = locale === "ar" ? product.descriptionAr : product.description;
   const lineTotal = product.price * qty;
-  const related = getRelated(product.id, 4);
+  const related = list.filter((p) => p.id !== product.id).slice(0, 4);
 
   // Prev / next product navigation (cycles through the catalogue)
-  const idx = products.findIndex((p) => p.id === product.id);
-  const prevProduct = products[(idx - 1 + products.length) % products.length];
-  const nextProduct = products[(idx + 1) % products.length];
+  const idx = list.findIndex((p) => p.id === product.id);
+  const prevProduct = list.length ? list[(idx - 1 + list.length) % list.length] : null;
+  const nextProduct = list.length ? list[(idx + 1) % list.length] : null;
 
   const recentProducts = recentlyViewedIds
     .filter((rid) => rid !== product.id)
-    .map((rid) => products.find((x) => x.id === rid))
+    .map((rid) => list.find((x) => x.id === rid))
     .filter((p): p is Product => Boolean(p));
 
   const handleAdd = () => {
@@ -134,13 +134,15 @@ export default function ProductDetailPage() {
           <span className="text-foreground underline underline-offset-4">{name}</span>
         </nav>
         <div className="flex items-center gap-3 text-muted-foreground">
-          <Link
-            href={`/product/${prevProduct.id}`}
-            aria-label="Previous product"
-            className="transition-colors hover:text-foreground"
-          >
-            <ChevronLeft className="h-5 w-5 rtl-flip" />
-          </Link>
+          {prevProduct && (
+            <Link
+              href={`/product/${prevProduct.id}`}
+              aria-label="Previous product"
+              className="transition-colors hover:text-foreground"
+            >
+              <ChevronLeft className="h-5 w-5 rtl-flip" />
+            </Link>
+          )}
           <Link
             href="/shop"
             aria-label="Back to shop"
@@ -148,13 +150,15 @@ export default function ProductDetailPage() {
           >
             <LayoutGrid className="h-4 w-4" />
           </Link>
-          <Link
-            href={`/product/${nextProduct.id}`}
-            aria-label="Next product"
-            className="transition-colors hover:text-foreground"
-          >
-            <ChevronRight className="h-5 w-5 rtl-flip" />
-          </Link>
+          {nextProduct && (
+            <Link
+              href={`/product/${nextProduct.id}`}
+              aria-label="Next product"
+              className="transition-colors hover:text-foreground"
+            >
+              <ChevronRight className="h-5 w-5 rtl-flip" />
+            </Link>
+          )}
         </div>
       </div>
 
@@ -358,7 +362,7 @@ export default function ProductDetailPage() {
             <Button
               onClick={handleAdd}
               size="lg"
-              className="h-12 flex-1 rounded-full text-xs font-bold uppercase tracking-widest"
+              className="h-12 flex-1 rounded-full bg-black text-xs font-bold uppercase tracking-widest text-white hover:bg-black/90"
             >
               {t.product.addToCart} — {formatPrice(lineTotal)}
             </Button>

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, FileText } from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
@@ -66,12 +66,13 @@ export default function AdminBlogPage() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex items-center justify-between">
+    <div className="mx-auto w-full max-w-[1500px] space-y-4">
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#e6ece8] bg-white px-4 py-4 shadow-[0_5px_18px_rgba(27,61,46,0.03)] sm:px-5">
+        <span className="flex size-10 items-center justify-center rounded-xl bg-[#fff0f1] text-[#FF2D36]"><FileText className="size-5" /></span>
         <div><h1 className="font-display text-3xl font-semibold">{ar ? "المدونة" : "Blog Posts"}</h1></div>
         <Button onClick={openAdd} className="gap-2"><Plus className="size-4" />{ar ? "إضافة" : "Add Post"}</Button>
       </motion.div>
-      <Card>
+      <Card className="overflow-hidden rounded-xl border-[#e6ece8] shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
         <CardHeader className="flex-row items-center justify-between"><CardTitle className="font-display text-xl">{ar ? "كل المقالات" : "All Posts"} ({filtered.length})</CardTitle>
           <div className="relative w-64"><Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" /><Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search..." className="ps-9" /></div>
         </CardHeader>
@@ -82,7 +83,7 @@ export default function AdminBlogPage() {
               {loading ? Array.from({length:5}).map((_,i)=>(<TableRow key={i}><TableCell colSpan={5} className="py-4"><div className="h-4 w-full animate-pulse rounded bg-secondary" /></TableCell></TableRow>)) :
               filtered.length === 0 ? <TableRow><TableCell colSpan={5} className="py-12 text-center text-muted-foreground">No posts found</TableCell></TableRow> :
               filtered.map((p) => (
-                <TableRow key={p.id} className="text-sm">
+                <TableRow key={p.id} className="text-[11px] hover:bg-[#fffafb]">
                   <TableCell className="ps-6"><div className="flex items-center gap-3">{p.image && <img src={p.image} alt="" className="size-10 rounded object-cover" />}<div><p className="font-medium">{p.title}</p><p className="text-xs text-muted-foreground">{p.author}</p></div></div></TableCell>
                   <TableCell>{p.category}</TableCell>
                   <TableCell className="text-muted-foreground">{p.date}</TableCell>
@@ -95,23 +96,23 @@ export default function AdminBlogPage() {
         </CardContent>
       </Card>
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editing ? "Edit Post" : "Add Post"}</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div><Label className="text-xs uppercase">Title</Label><Input value={form.title} onChange={(e) => setForm({...form, title: e.target.value})} required /></div>
-            <div><Label className="text-xs uppercase">Title (Arabic)</Label><Input value={form.titleAr} onChange={(e) => setForm({...form, titleAr: e.target.value})} dir="rtl" /></div>
-            <div><Label className="text-xs uppercase">Excerpt</Label><Textarea value={form.excerpt} onChange={(e) => setForm({...form, excerpt: e.target.value})} rows={2} /></div>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto rounded-2xl border-[#e6ece8] p-5 shadow-2xl">
+          <DialogHeader className="gap-1 pe-8"><DialogTitle className="text-[15px] font-semibold">{editing ? "Edit post" : "Add post"}</DialogTitle><DialogDescription className="text-[11px]">Write the essential details for this storefront article.</DialogDescription></DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Title</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20" value={form.title} onChange={(e) => setForm({...form, title: e.target.value})} required /></div>
+            <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Title (Arabic)</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20" value={form.titleAr} onChange={(e) => setForm({...form, titleAr: e.target.value})} dir="rtl" /></div>
+            <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Excerpt</Label><Textarea className="rounded-lg border-[#dfe8e2] text-xs shadow-none focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20" value={form.excerpt} onChange={(e) => setForm({...form, excerpt: e.target.value})} rows={3} /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs uppercase">Category</Label><Input value={form.category} onChange={(e) => setForm({...form, category: e.target.value})} /></div>
-              <div><Label className="text-xs uppercase">Author</Label><Input value={form.author} onChange={(e) => setForm({...form, author: e.target.value})} /></div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Category</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none" value={form.category} onChange={(e) => setForm({...form, category: e.target.value})} /></div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Author</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none" value={form.author} onChange={(e) => setForm({...form, author: e.target.value})} /></div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label className="text-xs uppercase">Date</Label><Input type="date" value={form.date} onChange={(e) => setForm({...form, date: e.target.value})} /></div>
-              <div><Label className="text-xs uppercase">Read Time (min)</Label><Input type="number" value={form.readTime} onChange={(e) => setForm({...form, readTime: e.target.value})} /></div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Date</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none" type="date" value={form.date} onChange={(e) => setForm({...form, date: e.target.value})} /></div>
+              <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Read time (minutes)</Label><Input className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none" type="number" value={form.readTime} onChange={(e) => setForm({...form, readTime: e.target.value})} /></div>
             </div>
             <ImageUpload label="Post image" value={form.image} onChange={(image) => setForm({...form, image})} />
-            <div><Label className="text-xs uppercase">Status</Label><Select value={form.status} onValueChange={(v) => setForm({...form, status: v})}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="published">Published</SelectItem><SelectItem value="draft">Draft</SelectItem></SelectContent></Select></div>
-            <DialogFooter><Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button><Button type="submit" disabled={saving}>{saving ? "Saving..." : "Save"}</Button></DialogFooter>
+            <div className="space-y-1.5"><Label className="text-[10px] font-semibold text-[#56615b]">Status</Label><Select value={form.status} onValueChange={(v) => setForm({...form, status: v})}><SelectTrigger className="h-10 rounded-lg border-[#dfe8e2] text-xs shadow-none"><SelectValue /></SelectTrigger><SelectContent><SelectItem value="published">Published</SelectItem><SelectItem value="draft">Draft</SelectItem></SelectContent></Select></div>
+            <DialogFooter className="border-t border-[#edf1ee] pt-4"><Button type="button" variant="outline" className="h-9 rounded-lg text-xs" onClick={() => setDialogOpen(false)}>Cancel</Button><Button type="submit" className="h-9 rounded-lg bg-[#FF2D36] text-xs hover:bg-[#e52630]" disabled={saving}>{saving ? "Saving..." : editing ? "Save changes" : "Add post"}</Button></DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

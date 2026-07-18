@@ -1,7 +1,21 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Trash2, Loader2, Plus } from "lucide-react";
+import {
+  BellRing,
+  CircleDollarSign,
+  Instagram,
+  LayoutTemplate,
+  Loader2,
+  Plus,
+  Save,
+  Settings2,
+  Store,
+  TicketPercent,
+  Trash2,
+  Truck,
+  UsersRound,
+  type LucideIcon,
+} from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -107,6 +121,54 @@ const emptyCoupon: Omit<Coupon, "id"> = {
   active: true,
   expiresAt: null,
 };
+
+function SettingsPanel({
+  icon: Icon,
+  title,
+  description,
+  children,
+}: {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="overflow-hidden rounded-xl border border-[#e6ece8] bg-white shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
+      <div className="flex items-start gap-3 border-b border-[#edf1ee] px-4 py-4 sm:px-5">
+        <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#fff0f1] text-[#FF2D36]">
+          <Icon className="size-[18px]" strokeWidth={1.8} />
+        </span>
+        <div>
+          <h2 className="text-[13px] font-semibold text-[#1b241f]">{title}</h2>
+          <p className="mt-0.5 text-[10px] leading-4 text-[#87918c]">{description}</p>
+        </div>
+      </div>
+      <div className="p-4 sm:p-5">{children}</div>
+    </section>
+  );
+}
+
+function SettingsField({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div>
+      <Label className="text-[10px] font-semibold text-[#56615b]">{label}</Label>
+      <div className="mt-1.5">{children}</div>
+      {hint && <p className="mt-1.5 text-[9px] leading-4 text-[#919b96]">{hint}</p>}
+    </div>
+  );
+}
+
+const settingsInputClass = "h-10 rounded-lg border-[#dfe8e2] bg-white text-xs text-[#26312b] shadow-none placeholder:text-[#a6afaa] focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20";
+const tabTriggerClass = "h-9 shrink-0 rounded-lg px-3.5 text-[11px] font-semibold text-[#69746e] data-[state=active]:bg-[#fff0f1] data-[state=active]:text-[#FF2D36] data-[state=active]:shadow-none";
 
 export default function AdminSettingsPage() {
   const { locale } = useLanguage();
@@ -279,54 +341,70 @@ export default function AdminSettingsPage() {
     }
   }
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="size-6 animate-spin text-muted-foreground" /></div>;
+  if (loading) return <div className="flex min-h-[420px] items-center justify-center"><Loader2 className="size-5 animate-spin text-[#FF2D36]" /></div>;
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+    <div className="mx-auto w-full max-w-[1320px] space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-[#e6ece8] bg-white px-4 py-4 shadow-[0_5px_18px_rgba(27,61,46,0.03)] sm:px-5">
+        <span className="flex size-10 items-center justify-center rounded-xl bg-[#fff0f1] text-[#FF2D36]"><Settings2 className="size-5" /></span>
         <h1 className="font-display text-3xl font-semibold">{ar ? "الإعدادات" : "Settings"}</h1>
-      </motion.div>
-      <Tabs defaultValue="general">
-        <TabsList className="flex-wrap">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="hero">Hero</TabsTrigger>
-          <TabsTrigger value="testimonials">Testimonials</TabsTrigger>
-          <TabsTrigger value="shipping">Shipping</TabsTrigger>
-          <TabsTrigger value="coupons">Coupons</TabsTrigger>
+        <Button onClick={saveSettings} disabled={saving} className="h-9 rounded-lg bg-[#FF2D36] px-3.5 text-[11px] font-semibold text-white hover:bg-[#e52630]">
+          {saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />}
+          {saving ? "Saving changes" : "Save changes"}
+        </Button>
+      </div>
+      <Tabs defaultValue="general" className="space-y-4">
+        <TabsList className="no-scrollbar flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl border border-[#e6ece8] bg-white p-2 shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
+          <TabsTrigger value="general" className={tabTriggerClass}><Store className="size-3.5" />General</TabsTrigger>
+          <TabsTrigger value="hero" className={tabTriggerClass}><LayoutTemplate className="size-3.5" />Hero slides</TabsTrigger>
+          <TabsTrigger value="testimonials" className={tabTriggerClass}><UsersRound className="size-3.5" />Testimonials</TabsTrigger>
+          <TabsTrigger value="shipping" className={tabTriggerClass}><Truck className="size-3.5" />Shipping</TabsTrigger>
+          <TabsTrigger value="coupons" className={tabTriggerClass}><TicketPercent className="size-3.5" />Coupons</TabsTrigger>
         </TabsList>
-        <TabsContent value="general">
-          <Card><CardHeader><CardTitle>Site Settings</CardTitle></CardHeader><CardContent className="space-y-4">
-            <div><Label>Logo Text</Label><Input value={settings.logoText || ""} onChange={(e) => setSettings({...settings, logoText: e.target.value})} /></div>
-            <div><Label>Phone</Label><Input value={settings.phone || ""} onChange={(e) => setSettings({...settings, phone: e.target.value})} /></div>
-            <div><Label>Email</Label><Input value={settings.email || ""} onChange={(e) => setSettings({...settings, email: e.target.value})} /></div>
-            <div><Label>Address</Label><Input value={settings.address || ""} onChange={(e) => setSettings({...settings, address: e.target.value})} /></div>
-            <div><Label>Announcement 1</Label><Input value={settings.announcement1 || ""} onChange={(e) => setSettings({...settings, announcement1: e.target.value})} /></div>
-            <div><Label>Announcement 2</Label><Input value={settings.announcement2 || ""} onChange={(e) => setSettings({...settings, announcement2: e.target.value})} /></div>
-            <div><Label>Free Ship Threshold ($)</Label><Input value={settings.freeShipThreshold || "70"} onChange={(e) => setSettings({...settings, freeShipThreshold: e.target.value})} /></div>
-            <div><Label>Instagram Handle</Label><Input value={settings.instagramHandle || ""} onChange={(e) => setSettings({...settings, instagramHandle: e.target.value})} /></div>
-            <div>
-              <Label>Instagram Images (JSON array of URLs)</Label>
-              <Input
-                value={settings.instagramImages || ""}
-                onChange={(e) => setSettings({...settings, instagramImages: e.target.value})}
-                placeholder='["https://images.unsplash.com/...", "https://..."]'
-              />
-              <p className="mt-1 text-xs text-muted-foreground">A JSON array of image URLs used in the home page Instagram feed.</p>
+        <TabsContent value="general" className="mt-0 space-y-4 focus-visible:outline-none">
+          <SettingsPanel icon={Store} title="Store identity" description="The details customers see across your storefront and order communications.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SettingsField label="Store name"><Input className={settingsInputClass} value={settings.logoText || ""} onChange={(e) => setSettings({ ...settings, logoText: e.target.value })} placeholder="Modave" /></SettingsField>
+              <SettingsField label="Support email"><Input className={settingsInputClass} type="email" value={settings.email || ""} onChange={(e) => setSettings({ ...settings, email: e.target.value })} placeholder="hello@yourstore.com" /></SettingsField>
+              <SettingsField label="Phone number"><Input className={settingsInputClass} value={settings.phone || ""} onChange={(e) => setSettings({ ...settings, phone: e.target.value })} placeholder="+1 555 000 0000" /></SettingsField>
+              <SettingsField label="Store address"><Input className={settingsInputClass} value={settings.address || ""} onChange={(e) => setSettings({ ...settings, address: e.target.value })} placeholder="Street, city, country" /></SettingsField>
             </div>
-            <Button onClick={saveSettings} disabled={saving}>{saving ? "Saving..." : "Save Settings"}</Button>
-          </CardContent></Card>
+          </SettingsPanel>
+          <SettingsPanel icon={BellRing} title="Announcement bar" description="Short messages shown above your storefront navigation.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SettingsField label="Primary announcement"><Input className={settingsInputClass} value={settings.announcement1 || ""} onChange={(e) => setSettings({ ...settings, announcement1: e.target.value })} placeholder="Free shipping on orders over $70" /></SettingsField>
+              <SettingsField label="Secondary announcement"><Input className={settingsInputClass} value={settings.announcement2 || ""} onChange={(e) => setSettings({ ...settings, announcement2: e.target.value })} placeholder="Easy returns within 14 days" /></SettingsField>
+            </div>
+          </SettingsPanel>
+          <SettingsPanel icon={CircleDollarSign} title="Checkout rules" description="Control free shipping, cart urgency, and automatic discounts.">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <SettingsField label="Free shipping threshold" hint="Cart subtotal in USD."><Input className={settingsInputClass} type="number" min="0" value={settings.freeShipThreshold || "70"} onChange={(e) => setSettings({ ...settings, freeShipThreshold: e.target.value })} /></SettingsField>
+              <SettingsField label="Cart countdown (minutes)"><Input className={settingsInputClass} type="number" min="1" value={settings.cartCountdownMinutes || "15"} onChange={(e) => setSettings({ ...settings, cartCountdownMinutes: e.target.value })} /></SettingsField>
+              <SettingsField label="Discount threshold"><Input className={settingsInputClass} type="number" min="0" value={settings.discountThreshold || "200"} onChange={(e) => setSettings({ ...settings, discountThreshold: e.target.value })} /></SettingsField>
+              <SettingsField label="Discount percentage"><Input className={settingsInputClass} type="number" min="0" max="100" value={settings.discountPercentage || "10"} onChange={(e) => setSettings({ ...settings, discountPercentage: e.target.value })} /></SettingsField>
+              <SettingsField label="Maximum discount"><Input className={settingsInputClass} type="number" min="0" value={settings.maxDiscount || "80"} onChange={(e) => setSettings({ ...settings, maxDiscount: e.target.value })} /></SettingsField>
+              <SettingsField label="Sale countdown (hours)"><Input className={settingsInputClass} type="number" min="1" value={settings.countdownHours || "48"} onChange={(e) => setSettings({ ...settings, countdownHours: e.target.value })} /></SettingsField>
+            </div>
+          </SettingsPanel>
+          <SettingsPanel icon={Instagram} title="Instagram feed" description="Connect the social content shown in the homepage feed.">
+            <div className="grid gap-4">
+              <SettingsField label="Instagram handle"><Input className={settingsInputClass} value={settings.instagramHandle || ""} onChange={(e) => setSettings({ ...settings, instagramHandle: e.target.value })} placeholder="@yourstore" /></SettingsField>
+              <SettingsField label="Instagram image URLs" hint="Use a JSON array of image URLs. The feed updates after saving."><Input className={settingsInputClass} value={settings.instagramImages || ""} onChange={(e) => setSettings({ ...settings, instagramImages: e.target.value })} placeholder='["https://images.unsplash.com/...", "https://..."]' /></SettingsField>
+            </div>
+          </SettingsPanel>
+          <div className="flex items-center justify-between rounded-xl border border-[#ffd8da] bg-[#fff7f7] px-4 py-3 sm:px-5"><p className="text-[10px] text-[#96656a]">Changes are applied to your storefront after saving.</p><Button onClick={saveSettings} disabled={saving} variant="ghost" className="h-8 rounded-lg px-2 text-[10px] font-semibold text-[#FF2D36] hover:bg-[#fff0f1]">Save changes</Button></div>
         </TabsContent>
 
         {/* HERO */}
-        <TabsContent value="hero">
-          <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle>Hero Slides ({heroSlides.length})</CardTitle>
-              <Button onClick={() => { setHeroForm(emptyHero); setHeroOpen(true); }} className="gap-2" size="sm">
-                <Plus className="size-4" /> Add
+        <TabsContent value="hero" className="mt-0 focus-visible:outline-none">
+          <Card className="overflow-hidden rounded-xl border-[#e6ece8] shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
+            <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-[#edf1ee] px-4 py-4 sm:px-5">
+              <div><CardTitle className="text-[13px] font-semibold text-[#1b241f]">Hero slides</CardTitle><p className="mt-1 text-[10px] text-[#87918c]">{heroSlides.length} configured slides for the storefront.</p></div>
+              <Button onClick={() => { setHeroForm(emptyHero); setHeroOpen(true); }} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold hover:bg-[#e52630]" size="sm">
+                <Plus className="size-3.5" /> Add slide
               </Button>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 p-4 sm:p-5">
               {heroSlides.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">No hero slides yet.</p>
               ) : heroSlides.map((s) => (
@@ -341,15 +419,15 @@ export default function AdminSettingsPage() {
         </TabsContent>
 
         {/* TESTIMONIALS */}
-        <TabsContent value="testimonials">
-          <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle>Testimonials ({testimonials.length})</CardTitle>
-              <Button onClick={() => { setTestimonialForm(emptyTestimonial); setTestimonialOpen(true); }} className="gap-2" size="sm">
-                <Plus className="size-4" /> Add
+        <TabsContent value="testimonials" className="mt-0 focus-visible:outline-none">
+          <Card className="overflow-hidden rounded-xl border-[#e6ece8] shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
+            <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-[#edf1ee] px-4 py-4 sm:px-5">
+              <div><CardTitle className="text-[13px] font-semibold text-[#1b241f]">Testimonials</CardTitle><p className="mt-1 text-[10px] text-[#87918c]">{testimonials.length} customer stories shown on the storefront.</p></div>
+              <Button onClick={() => { setTestimonialForm(emptyTestimonial); setTestimonialOpen(true); }} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold hover:bg-[#e52630]" size="sm">
+                <Plus className="size-3.5" /> Add testimonial
               </Button>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 p-4 sm:p-5">
               {testimonials.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">No testimonials yet.</p>
               ) : testimonials.map((t) => (
@@ -364,15 +442,15 @@ export default function AdminSettingsPage() {
         </TabsContent>
 
         {/* SHIPPING */}
-        <TabsContent value="shipping">
-          <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle>Shipping Options ({shippingOpts.length})</CardTitle>
-              <Button onClick={() => { setShippingForm(emptyShipping); setShippingOpen(true); }} className="gap-2" size="sm">
-                <Plus className="size-4" /> Add
+        <TabsContent value="shipping" className="mt-0 focus-visible:outline-none">
+          <Card className="overflow-hidden rounded-xl border-[#e6ece8] shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
+            <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-[#edf1ee] px-4 py-4 sm:px-5">
+              <div><CardTitle className="text-[13px] font-semibold text-[#1b241f]">Shipping methods</CardTitle><p className="mt-1 text-[10px] text-[#87918c]">{shippingOpts.length} delivery options available at checkout.</p></div>
+              <Button onClick={() => { setShippingForm(emptyShipping); setShippingOpen(true); }} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold hover:bg-[#e52630]" size="sm">
+                <Plus className="size-3.5" /> Add method
               </Button>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 p-4 sm:p-5">
               {shippingOpts.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">No shipping options yet.</p>
               ) : shippingOpts.map((s) => (
@@ -386,15 +464,15 @@ export default function AdminSettingsPage() {
         </TabsContent>
 
         {/* COUPONS */}
-        <TabsContent value="coupons">
-          <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle>Coupons ({coupons.length})</CardTitle>
-              <Button onClick={() => { setCouponForm(emptyCoupon); setCouponOpen(true); }} className="gap-2" size="sm">
-                <Plus className="size-4" /> Add
+        <TabsContent value="coupons" className="mt-0 focus-visible:outline-none">
+          <Card className="overflow-hidden rounded-xl border-[#e6ece8] shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
+            <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-[#edf1ee] px-4 py-4 sm:px-5">
+              <div><CardTitle className="text-[13px] font-semibold text-[#1b241f]">Discount coupons</CardTitle><p className="mt-1 text-[10px] text-[#87918c]">{coupons.length} promotion codes created for your store.</p></div>
+              <Button onClick={() => { setCouponForm(emptyCoupon); setCouponOpen(true); }} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold hover:bg-[#e52630]" size="sm">
+                <Plus className="size-3.5" /> Add coupon
               </Button>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2 p-4 sm:p-5">
               {coupons.length === 0 ? (
                 <p className="py-6 text-center text-sm text-muted-foreground">No coupons yet.</p>
               ) : coupons.map((c) => (

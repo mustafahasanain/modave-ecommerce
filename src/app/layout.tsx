@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Kumbh_Sans, Cormorant_Garamond } from "next/font/google";
+import { Cairo, Kumbh_Sans, Cormorant_Garamond } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
@@ -16,6 +16,12 @@ const cormorant = Cormorant_Garamond({
   variable: "--font-cormorant",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+const cairo = Cairo({
+  variable: "--font-cairo",
+  subsets: ["latin", "arabic"],
   display: "swap",
 });
 
@@ -37,7 +43,7 @@ export default function RootLayout({
   return (
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <body
-        className={`${kumbhSans.variable} ${cormorant.variable} antialiased bg-background text-foreground`}
+        className={`${kumbhSans.variable} ${cormorant.variable} ${cairo.variable} antialiased bg-background text-foreground`}
       >
         <ThemeProvider
           attribute="class"
