@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { authenticateAdmin } from "@/lib/admin-auth";
 import { createSessionCookie, SESSION_COOKIE_NAME, isValidSession } from "@/lib/auth";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { isSecureRequest } from "@/lib/request-protocol";
 import { adminAuthSchema, parseJson } from "@/lib/validation";
 
 // POST /api/admin/auth — login
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     res.cookies.set(SESSION_COOKIE_NAME, await createSessionCookie(admin.id), {
       httpOnly: true,
       sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
+      secure: isSecureRequest(req),
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 7 days
     });

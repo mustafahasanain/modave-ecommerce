@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     }
 
     const response = NextResponse.json({ customer: publicCustomer(customer) });
-    response.cookies.set(customerSessionCookie.name, createCustomerSession(customer.id), customerSessionCookie.options);
+    response.cookies.set(customerSessionCookie.name, createCustomerSession(customer.id), customerSessionCookie.options(request));
     return response;
   } catch (error) {
     console.error("Customer authentication error:", error);
@@ -69,8 +69,8 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function DELETE() {
+export async function DELETE(request: NextRequest) {
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(customerSessionCookie.name, "", { ...customerSessionCookie.options, maxAge: 0 });
+  response.cookies.set(customerSessionCookie.name, "", { ...customerSessionCookie.options(request), maxAge: 0 });
   return response;
 }

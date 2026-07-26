@@ -1,4 +1,6 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { NextRequest } from "next/server";
+import { isSecureRequest } from "@/lib/request-protocol";
 
 const COOKIE_NAME = "modave_customer_session";
 const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
@@ -47,11 +49,11 @@ export function getCustomerIdFromSession(value: string | undefined) {
 
 export const customerSessionCookie = {
   name: COOKIE_NAME,
-  options: {
+  options: (req: NextRequest) => ({
     httpOnly: true,
     sameSite: "lax" as const,
-    secure: process.env.NODE_ENV === "production",
+    secure: isSecureRequest(req),
     maxAge: SESSION_MAX_AGE,
     path: "/",
-  },
+  }),
 };
