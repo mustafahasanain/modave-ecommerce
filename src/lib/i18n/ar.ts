@@ -106,7 +106,7 @@ export const ar = {
     cta: "تسوق المجموعة",
   },
   shop: {
-    title: "نساء",
+    title: "المتجر",
     breadcrumb: "الصفحة الرئيسية",
     sortFeatured: "مميز",
     sortPriceLow: "السعر: من الأقل للأعلى",

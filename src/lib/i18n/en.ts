@@ -107,7 +107,7 @@ export const en = {
     cta: "Shop Collection",
   },
   shop: {
-    title: "Women",
+    title: "Shop",
     breadcrumb: "Homepage",
     sortFeatured: "Featured",
     sortPriceLow: "Price: Low to High",

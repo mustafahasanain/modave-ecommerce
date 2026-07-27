@@ -389,13 +389,6 @@ export default function ShopPage() {
             <h1 className="font-display text-4xl font-semibold tracking-tight sm:text-5xl">
               {t.shop.title}
             </h1>
-            <nav className="mt-3 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Link href="/" className="transition-colors hover:text-foreground">
-                {t.shop.breadcrumb}
-              </Link>
-              <ChevronRight className="h-3.5 w-3.5 rtl-flip" />
-              <span className="text-foreground/70">{t.shop.title}</span>
-            </nav>
           </div>
         </div>
 
