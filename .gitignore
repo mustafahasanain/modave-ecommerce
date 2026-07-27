@@ -35,5 +35,7 @@ prisma/**/*.sqlite-journal
 # TypeScript incremental build cache
 *.tsbuildinfo
 
-# Runtime-uploaded images (served by src/app/uploads/[...segments])
-uploads/
+# Runtime-uploaded images. Leading slash is required: an unanchored "uploads/"
+# also matches src/app/uploads/, which silently excludes the route handler that
+# serves them.
+/uploads/
