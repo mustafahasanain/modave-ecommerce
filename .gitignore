@@ -34,3 +34,6 @@ prisma/**/*.sqlite-journal
 
 # TypeScript incremental build cache
 *.tsbuildinfo
+
+# Runtime-uploaded images (served by src/app/uploads/[...segments])
+uploads/

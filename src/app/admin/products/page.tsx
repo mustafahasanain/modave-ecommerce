@@ -152,6 +152,23 @@ export default function AdminProductsPage() {
       toast.error("Please enter a product name");
       return;
     }
+    // The category Select isn't a native form control, so `required` can't
+    // catch this — without the check an unpicked category reaches the API as
+    // "" and comes back a 400.
+    if (!form.category.trim()) {
+      toast.error("Please choose a category");
+      return;
+    }
+    const price = Number(form.price);
+    if (!Number.isFinite(price) || price < 0) {
+      toast.error("Please enter a valid price");
+      return;
+    }
+    const stock = Number(form.stock);
+    if (!Number.isInteger(stock) || stock < 0) {
+      toast.error("Stock must be a whole number");
+      return;
+    }
     setSaving(true);
     try {
       // Store only an image deliberately selected by the administrator.
@@ -161,23 +178,29 @@ export default function AdminProductsPage() {
       const matchedCategory = allCategories.find((c) => c.name === form.category);
       const payload = {
         name: form.name,
-        price: Number(form.price),
-        stock: Number(form.stock),
+        price,
+        stock,
         category: form.category,
         categoryAr: matchedCategory?.nameAr || form.category,
         status: form.status,
         images,
         description: form.description,
       };
-      if (editing) {
-        const ok = await updateProduct(editing.id, payload);
-        if (ok) toast.success(`"${form.name}" updated successfully`);
-        else toast.error("Failed to update product");
-      } else {
-        const ok = await createProduct(payload);
-        if (ok) toast.success(`"${form.name}" added to catalog`);
-        else toast.error("Failed to create product");
+      const failure = editing
+        ? await updateProduct(editing.id, payload)
+        : await createProduct(payload);
+
+      if (failure) {
+        // Keep the dialog open so the admin can fix the input rather than
+        // losing everything they typed.
+        toast.error(failure);
+        return;
       }
+      toast.success(
+        editing
+          ? `"${form.name}" updated successfully`
+          : `"${form.name}" added to catalog`
+      );
       setDialogOpen(false);
     } finally {
       setSaving(false);
@@ -187,9 +210,9 @@ export default function AdminProductsPage() {
   async function confirmDelete() {
     if (!deleteTarget) return;
     const name = locale === "ar" ? deleteTarget.nameAr : deleteTarget.name;
-    const ok = await deleteProduct(deleteTarget.id);
-    if (ok) toast.success(`"${name}" has been deleted`);
-    else toast.error("Failed to delete product");
+    const failure = await deleteProduct(deleteTarget.id);
+    if (failure) toast.error(failure);
+    else toast.success(`"${name}" has been deleted`);
     setDeleteTarget(null);
   }
 

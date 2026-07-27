@@ -2,18 +2,14 @@ import { randomUUID } from "crypto";
 import { mkdir, writeFile } from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
+import { UPLOADS_DIRECTORY, UPLOAD_EXTENSIONS } from "@/lib/uploads";
 
 export const runtime = "nodejs";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
-const EXTENSIONS: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-};
 
-// POST /api/admin/uploads — store one admin-selected image in public/uploads.
+// POST /api/admin/uploads — store one admin-selected image outside public/ and
+// return the /uploads/<name> URL that the serving route handler resolves.
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -22,17 +18,16 @@ export async function POST(request: NextRequest) {
     if (!(file instanceof File)) {
       return NextResponse.json({ error: "Choose an image to upload." }, { status: 400 });
     }
-    if (!EXTENSIONS[file.type]) {
+    if (!UPLOAD_EXTENSIONS[file.type]) {
       return NextResponse.json({ error: "Only JPG, PNG, WebP, and GIF images are allowed." }, { status: 400 });
     }
     if (file.size === 0 || file.size > MAX_FILE_SIZE) {
       return NextResponse.json({ error: "Images must be smaller than 5 MB." }, { status: 400 });
     }
 
-    const filename = `${randomUUID()}.${EXTENSIONS[file.type]}`;
-    const uploadDirectory = path.join(process.cwd(), "public", "uploads");
-    await mkdir(uploadDirectory, { recursive: true });
-    await writeFile(path.join(uploadDirectory, filename), Buffer.from(await file.arrayBuffer()));
+    const filename = `${randomUUID()}.${UPLOAD_EXTENSIONS[file.type]}`;
+    await mkdir(UPLOADS_DIRECTORY, { recursive: true });
+    await writeFile(path.join(UPLOADS_DIRECTORY, filename), Buffer.from(await file.arrayBuffer()));
 
     return NextResponse.json({ url: `/uploads/${filename}` }, { status: 201 });
   } catch (error) {
