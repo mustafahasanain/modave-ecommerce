@@ -2,6 +2,14 @@
 
 import { useState, useEffect, useCallback } from "react";
 
+const ADMIN_ORDERS_CHANGED_EVENT = "admin-orders-changed";
+
+export function notifyAdminOrdersChanged() {
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(ADMIN_ORDERS_CHANGED_EVENT));
+  }
+}
+
 export interface AdminOrder {
   id: string;
   orderNumber: string;
@@ -30,13 +38,20 @@ interface UseAdminOrders {
   refetch: () => Promise<void>;
 }
 
-export function useAdminOrders(statusFilter?: string): UseAdminOrders {
+interface UseAdminOrdersOptions {
+  refreshInterval?: number;
+}
+
+export function useAdminOrders(
+  statusFilter?: string,
+  { refreshInterval = 0 }: UseAdminOrdersOptions = {}
+): UseAdminOrders {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const refetch = useCallback(async () => {
-    setLoading(true);
+  const fetchOrders = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     setError(null);
     try {
       const qs = statusFilter && statusFilter !== "all" ? `?status=${statusFilter}` : "";
@@ -52,8 +67,30 @@ export function useAdminOrders(statusFilter?: string): UseAdminOrders {
   }, [statusFilter]);
 
   useEffect(() => {
-    refetch();
-  }, [refetch]);
+    void fetchOrders();
+
+    const refreshInBackground = () => void fetchOrders(false);
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") refreshInBackground();
+    };
+
+    window.addEventListener(ADMIN_ORDERS_CHANGED_EVENT, refreshInBackground);
+    window.addEventListener("focus", refreshInBackground);
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+
+    const intervalId = refreshInterval
+      ? window.setInterval(refreshInBackground, refreshInterval)
+      : undefined;
+
+    return () => {
+      window.removeEventListener(ADMIN_ORDERS_CHANGED_EVENT, refreshInBackground);
+      window.removeEventListener("focus", refreshInBackground);
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      if (intervalId !== undefined) window.clearInterval(intervalId);
+    };
+  }, [fetchOrders, refreshInterval]);
+
+  const refetch = useCallback(() => fetchOrders(true), [fetchOrders]);
 
   return { orders, loading, error, refetch };
 }

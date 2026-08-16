@@ -54,6 +54,8 @@ export async function POST(req: NextRequest) {
           images: JSON.stringify(body.images),
           colors: JSON.stringify(body.colors),
           sizes: JSON.stringify(body.sizes),
+          bestSeller: body.bestSeller,
+          newArrival: body.newArrival,
           rating: 0,
           reviews: 0,
           sold: 0,

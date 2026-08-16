@@ -15,6 +15,7 @@ import {
   LogOut,
   Menu,
   Package,
+  RefreshCw,
   Settings,
   ShoppingBag,
   ShoppingCart,
@@ -233,7 +234,8 @@ function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const { orders } = useAdminOrders();
+  const { orders, loading: ordersLoading, error: ordersError, refetch: refetchOrders } =
+    useAdminOrders(undefined, { refreshInterval: 30_000 });
   const { range } = useAdminDashboardPeriod();
   const activeItem = getActiveNav(pathname);
   const pageTitle = activeItem.labelKey
@@ -293,7 +295,10 @@ function AdminShell({ children }: { children: React.ReactNode }) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="relative flex size-9 items-center justify-center rounded-lg text-[#59635e] transition-colors hover:bg-[#f3f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF2D36]/25" aria-label="Notifications">
+                <button
+                  className="relative flex size-9 items-center justify-center rounded-lg text-[#59635e] transition-colors hover:bg-[#f3f7f4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF2D36]/25"
+                  aria-label={locale === "ar" ? `الإشعارات: ${pendingCount} طلبات معلّقة` : `Notifications: ${pendingCount} pending orders`}
+                >
                   <Bell className="size-[17px]" strokeWidth={1.8} />
                   {pendingCount > 0 && (
                     <span className="absolute end-1.5 top-1.5 size-2 rounded-full border-2 border-white bg-[#ee6b6b]" />
@@ -302,19 +307,45 @@ function AdminShell({ children }: { children: React.ReactNode }) {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-72 rounded-xl border-[#e5ebe7] p-2">
                 <DropdownMenuLabel className="flex items-center justify-between text-xs">
-                  Notifications
-                  {pendingCount > 0 && <span className="text-[10px] font-medium text-[#FF2D36]">{pendingCount} new</span>}
+                  {locale === "ar" ? "الإشعارات" : "Notifications"}
+                  {pendingCount > 0 && (
+                    <span className="text-[10px] font-medium text-[#FF2D36]">
+                      {locale === "ar" ? `${pendingCount} معلّقة` : `${pendingCount} pending`}
+                    </span>
+                  )}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {pendingCount > 0 ? (
+                {ordersLoading ? (
+                  <div className="flex items-center justify-center gap-2 px-3 py-6 text-xs text-[#85908a]">
+                    <RefreshCw className="size-3.5 animate-spin" />
+                    {locale === "ar" ? "جارٍ تحميل الإشعارات..." : "Loading notifications..."}
+                  </div>
+                ) : ordersError ? (
+                  <DropdownMenuItem
+                    className="flex cursor-pointer items-center justify-center gap-2 rounded-lg p-3 text-xs text-[#b64545]"
+                    onSelect={() => void refetchOrders()}
+                  >
+                    <RefreshCw className="size-3.5" />
+                    {locale === "ar" ? "تعذّر التحميل — اضغط للمحاولة مجددًا" : "Could not load — click to retry"}
+                  </DropdownMenuItem>
+                ) : pendingCount > 0 ? (
                   <DropdownMenuItem asChild className="rounded-lg p-2.5 text-xs">
                     <Link href="/admin/orders?status=pending" className="items-start">
                       <span className="mt-0.5 size-2 shrink-0 rounded-full bg-[#f4b342]" />
-                      <span><span className="block font-medium">Orders need attention</span><span className="mt-0.5 block text-[10px] text-[#7f8984]">Review {pendingCount} pending {pendingCount === 1 ? "order" : "orders"}</span></span>
+                      <span>
+                        <span className="block font-medium">{locale === "ar" ? "طلبات تحتاج المتابعة" : "Orders need attention"}</span>
+                        <span className="mt-0.5 block text-[10px] text-[#7f8984]">
+                          {locale === "ar"
+                            ? `راجع ${pendingCount} من الطلبات المعلّقة`
+                            : `Review ${pendingCount} pending ${pendingCount === 1 ? "order" : "orders"}`}
+                        </span>
+                      </span>
                     </Link>
                   </DropdownMenuItem>
                 ) : (
-                  <div className="px-3 py-6 text-center text-xs text-[#85908a]">You’re all caught up.</div>
+                  <div className="px-3 py-6 text-center text-xs text-[#85908a]">
+                    {locale === "ar" ? "لا توجد طلبات تحتاج المتابعة." : "You’re all caught up."}
+                  </div>
                 )}
               </DropdownMenuContent>
             </DropdownMenu>

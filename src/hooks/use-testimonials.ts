@@ -14,7 +14,7 @@ export function useTestimonials() {
       const res = await fetch("/api/testimonials", { cache: "no-store" });
       if (!res.ok) throw new Error("fetch failed");
       const data = await res.json();
-      if (data.testimonials?.length > 0) setTestimonials(data.testimonials);
+      setTestimonials(data.testimonials || []);
     } catch {}
     setLoading(false);
   }, []);

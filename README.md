@@ -13,6 +13,7 @@ Next.js storefront and admin dashboard built with Bun, Tailwind CSS, shadcn/ui, 
 bun install
 bun run db:push
 bun run db:generate
+bun run db:seed
 ```
 
 Create `.env` and set `DATABASE_URL`:
@@ -63,4 +64,5 @@ Open `http://localhost:3000`.
 - `bun run db:push` - sync Prisma schema to the database
 - `bun run db:generate` - generate Prisma client
 - `bun run db:migrate` - create and apply a Prisma migration
+- `bun run db:seed` - add idempotent demo catalog, customers, orders, reviews, and storefront content
 - `bun run db:reset` - reset the database

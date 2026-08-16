@@ -3,36 +3,29 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { useLanguage } from "@/context/language-provider";
+import type { HomeConfig } from "@/lib/home-config";
 
-const IMAGES = {
-  left: "https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=900&q=80",
-  center:
-    "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=900&q=80",
-  right:
-    "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=900&q=80",
-};
-
-export function CollectionBanner() {
-  const { t } = useLanguage();
-  const cb = t.collectionBanner;
+export function CollectionBanner({ config, locale }: { config: HomeConfig; locale: "en" | "ar" }) {
+  const text = (key: keyof HomeConfig["content"]) => config.content[key][locale];
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-8 lg:py-12">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 lg:gap-5">
         <PromoCard
-          image={IMAGES.left}
-          title={cb.leftTitle}
-          discount={cb.discount}
-          cta={cb.cta}
+          image={config.images.collectionLeft}
+          title={text("collectionLeftTitle")}
+          discount={text("collectionDiscount")}
+          cta={text("collectionCta")}
+          href={config.links.collectionBanner}
           delay={0}
         />
-        <ImageCard image={IMAGES.center} delay={0.08} />
+        <ImageCard image={config.images.collectionCenter} href={config.links.collectionBanner} delay={0.08} />
         <PromoCard
-          image={IMAGES.right}
-          title={cb.rightTitle}
-          discount={cb.discount}
-          cta={cb.cta}
+          image={config.images.collectionRight}
+          title={text("collectionRightTitle")}
+          discount={text("collectionDiscount")}
+          cta={text("collectionCta")}
+          href={config.links.collectionBanner}
           delay={0.16}
         />
       </div>
@@ -45,12 +38,14 @@ function PromoCard({
   title,
   discount,
   cta,
+  href,
   delay,
 }: {
   image: string;
   title: string;
   discount: string;
   cta: string;
+  href: string;
   delay: number;
 }) {
   return (
@@ -61,7 +56,7 @@ function PromoCard({
       transition={{ duration: 0.5, delay }}
     >
       <Link
-        href="/shop"
+        href={href}
         className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-secondary sm:aspect-[3/4]"
       >
         <Image
@@ -96,7 +91,7 @@ function PromoCard({
   );
 }
 
-function ImageCard({ image, delay }: { image: string; delay: number }) {
+function ImageCard({ image, href, delay }: { image: string; href: string; delay: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 24 }}
@@ -105,7 +100,7 @@ function ImageCard({ image, delay }: { image: string; delay: number }) {
       transition={{ duration: 0.5, delay }}
     >
       <Link
-        href="/shop"
+        href={href}
         aria-label="Shop featured product"
         className="group relative block aspect-[4/5] overflow-hidden rounded-2xl bg-secondary sm:aspect-[3/4]"
       >

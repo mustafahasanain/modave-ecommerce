@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -65,6 +66,8 @@ type FormState = {
   status: "active" | "draft";
   imageUrl: string;
   description: string;
+  newArrival: boolean;
+  bestSeller: boolean;
 };
 
 const emptyForm: FormState = {
@@ -75,6 +78,8 @@ const emptyForm: FormState = {
   status: "active",
   imageUrl: "",
   description: "",
+  newArrival: false,
+  bestSeller: false,
 };
 
 const PAGE_SIZE = 8;
@@ -142,6 +147,8 @@ export default function AdminProductsPage() {
       status: (p.status as "active" | "draft") || "active",
       imageUrl: p.images?.[0] ?? "",
       description: locale === "ar" ? (p.descriptionAr ?? "") : (p.description ?? ""),
+      newArrival: !!p.newArrival,
+      bestSeller: !!p.bestSeller,
     });
     setDialogOpen(true);
   }
@@ -185,6 +192,8 @@ export default function AdminProductsPage() {
         status: form.status,
         images,
         description: form.description,
+        newArrival: form.newArrival,
+        bestSeller: form.bestSeller,
       };
       const failure = editing
         ? await updateProduct(editing.id, payload)
@@ -343,6 +352,20 @@ export default function AdminProductsPage() {
                                 <p className="text-xs text-muted-foreground">
                                   {locale === "ar" ? p.categoryAr : p.category}
                                 </p>
+                                {(p.newArrival || p.bestSeller) && (
+                                  <div className="mt-1 flex flex-wrap gap-1">
+                                    {p.newArrival && (
+                                      <Badge variant="outline" className="border-transparent bg-blue-50 px-1.5 py-0 text-[8px] text-blue-700">
+                                        {locale === "ar" ? "وصل حديثاً" : "New arrival"}
+                                      </Badge>
+                                    )}
+                                    {p.bestSeller && (
+                                      <Badge variant="outline" className="border-transparent bg-amber-50 px-1.5 py-0 text-[8px] text-amber-700">
+                                        {locale === "ar" ? "الأكثر مبيعاً" : "Best seller"}
+                                      </Badge>
+                                    )}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </TableCell>
@@ -531,6 +554,39 @@ export default function AdminProductsPage() {
                     <SelectItem value="draft">{t.admin.draft}</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div className="flex items-center justify-between rounded-lg border border-[#e4eae6] bg-[#fbfdfc] px-3 py-3">
+                <div className="pe-3">
+                  <Label htmlFor="p-new-arrival" className="text-[11px] font-semibold text-[#37433d]">
+                    {locale === "ar" ? "وصل حديثاً" : "New arrival"}
+                  </Label>
+                  <p className="mt-0.5 text-[9px] leading-4 text-[#87918c]">
+                    {locale === "ar" ? "إظهاره بقسم المنتجات الجديدة." : "Show in the homepage new-arrivals section."}
+                  </p>
+                </div>
+                <Switch
+                  id="p-new-arrival"
+                  checked={form.newArrival}
+                  onCheckedChange={(newArrival) => setForm({ ...form, newArrival })}
+                />
+              </div>
+              <div className="flex items-center justify-between rounded-lg border border-[#e4eae6] bg-[#fbfdfc] px-3 py-3">
+                <div className="pe-3">
+                  <Label htmlFor="p-best-seller" className="text-[11px] font-semibold text-[#37433d]">
+                    {locale === "ar" ? "الأكثر مبيعاً" : "Best seller"}
+                  </Label>
+                  <p className="mt-0.5 text-[9px] leading-4 text-[#87918c]">
+                    {locale === "ar" ? "إظهاره بقسم الأكثر مبيعاً." : "Show in the homepage best-sellers section."}
+                  </p>
+                </div>
+                <Switch
+                  id="p-best-seller"
+                  checked={form.bestSeller}
+                  onCheckedChange={(bestSeller) => setForm({ ...form, bestSeller })}
+                />
               </div>
             </div>
 

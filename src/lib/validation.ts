@@ -89,6 +89,8 @@ export const productCreateSchema = z.object({
   images: z.array(z.string()).optional().default([]),
   colors: z.array(z.object({ name: z.string(), hex: z.string() })).optional().default([]),
   sizes: z.array(z.string()).optional().default([]),
+  bestSeller: z.boolean().optional().default(false),
+  newArrival: z.boolean().optional().default(false),
 });
 
 export const productUpdateSchema = z.object({

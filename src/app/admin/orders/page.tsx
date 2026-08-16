@@ -1,12 +1,17 @@
 "use client";
 
 import { useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Search, Eye, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
-import { useAdminOrders, type AdminOrder } from "@/hooks/use-admin-orders";
+import {
+  notifyAdminOrdersChanged,
+  useAdminOrders,
+  type AdminOrder,
+} from "@/hooks/use-admin-orders";
 import { OrderDetailDialog } from "@/components/admin/order-detail-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +48,11 @@ import {
 } from "@/components/ui/alert-dialog";
 
 type OrderStatus = "paid" | "pending" | "cancelled";
+type OrderStatusFilter = "all" | OrderStatus;
+
+function isOrderStatusFilter(value: string | null): value is OrderStatusFilter {
+  return value === "all" || value === "paid" || value === "pending" || value === "cancelled";
+}
 
 function parseItems(itemsJson: string): number {
   try {
@@ -67,9 +77,15 @@ function formatDate(iso: string, locale: string): string {
 
 export default function AdminOrdersPage() {
   const { t, locale } = useLanguage();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | OrderStatus>("all");
-  const { orders, loading, refetch } = useAdminOrders(statusFilter);
+  const statusParam = searchParams.get("status");
+  const statusFilter: OrderStatusFilter = isOrderStatusFilter(statusParam)
+    ? statusParam
+    : "all";
+  const { orders, loading } = useAdminOrders(statusFilter);
   const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -89,7 +105,7 @@ export default function AdminOrdersPage() {
         toast.success(
           locale === "ar" ? "تم تحديث حالة الطلب" : "Order status updated"
         );
-        refetch();
+        notifyAdminOrdersChanged();
       } else {
         toast.error(locale === "ar" ? "فشل التحديث" : "Failed to update");
       }
@@ -116,7 +132,7 @@ export default function AdminOrdersPage() {
           locale === "ar" ? "تم حذف الطلب نهائياً" : "Order permanently deleted"
         );
         setDeleteTarget(null);
-        refetch();
+        notifyAdminOrdersChanged();
       } else {
         const data = await res.json().catch(() => null);
         const fallback =
@@ -159,6 +175,17 @@ export default function AdminOrdersPage() {
     const cancelled = orders.filter((o) => o.status === "cancelled").length;
     return { total, paid, pending, cancelled };
   }, [orders]);
+
+  function changeStatusFilter(value: OrderStatusFilter) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value === "all") {
+      params.delete("status");
+    } else {
+      params.set("status", value);
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
   function exportCsv() {
     const headers = ["Order Number", "Customer", "Email", "Date", "Items", "Total", "Status"];
@@ -256,7 +283,7 @@ export default function AdminOrdersPage() {
               </div>
               <Select
                 value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as "all" | OrderStatus)}
+                onValueChange={(v) => changeStatusFilter(v as OrderStatusFilter)}
               >
                 <SelectTrigger className="w-32 sm:w-40">
                   <SelectValue />

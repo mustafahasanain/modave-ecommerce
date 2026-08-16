@@ -27,7 +27,7 @@ function parseImages(raw: string | undefined): string[] {
   }
 }
 
-export function InstagramFeed() {
+export function InstagramFeed({ title, subtitle }: { title?: string; subtitle?: string }) {
   const { locale } = useLanguage();
   const { settings } = useSiteSettings();
 
@@ -54,12 +54,12 @@ export function InstagramFeed() {
             {handle}
           </div>
           <h2 className="mt-4 font-display text-3xl font-semibold tracking-tight sm:text-4xl">
-            {locale === "ar" ? "متجر انستغرام" : "Shop Instagram"}
+            {title || (locale === "ar" ? "متجر انستغرام" : "Shop Instagram")}
           </h2>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
-            {locale === "ar"
+            {subtitle || (locale === "ar"
               ? "جددي خزانة ملابسك باقتناء قطع جديدة اليوم!"
-              : "Elevate your wardrobe with fresh finds today!"}
+              : "Elevate your wardrobe with fresh finds today!")}
           </p>
         </motion.div>
 

@@ -2,8 +2,19 @@
 import { useState, useEffect, useCallback } from "react";
 import { collections as staticCats } from "@/data/products";
 
+export interface StoreCategory {
+  id?: number;
+  name: string;
+  nameAr: string;
+  image: string;
+  count?: number;
+  itemCount?: number;
+  slug?: string;
+  active?: boolean;
+}
+
 export function useCategories() {
-  const [categories, setCategories] = useState(staticCats);
+  const [categories, setCategories] = useState<StoreCategory[]>(staticCats);
   const [loading, setLoading] = useState(true);
   const refetch = useCallback(async () => {
     setLoading(true);

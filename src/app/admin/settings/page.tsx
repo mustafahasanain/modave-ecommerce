@@ -1,10 +1,12 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
 import {
   AlertTriangle,
   BellRing,
   CircleDollarSign,
   Instagram,
+  Images,
   LayoutTemplate,
   Loader2,
   Pencil,
@@ -22,6 +24,8 @@ import {
 import { useLanguage } from "@/context/language-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,6 +57,15 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/image-upload";
+import {
+  DEFAULT_HOME_CONFIG,
+  HOME_SECTION_KEYS,
+  HOME_SECTION_LABELS,
+  parseHomeConfig,
+  type HomeConfig,
+  type HomeContentKey,
+  type HomeImageKey,
+} from "@/lib/home-config";
 
 // ---------- Types ----------
 interface HeroSlide {
@@ -96,6 +109,41 @@ interface Coupon {
   active: boolean;
   expiresAt: string | null;
 }
+interface CatalogCategory { id: number; name: string; nameAr: string; image: string; active: boolean; }
+
+const HOME_CONTENT_GROUPS: { title: string; fields: { key: HomeContentKey; label: string; multiline?: boolean }[] }[] = [
+  { title: "Section headings", fields: [
+    { key: "exploreTitle", label: "Collections title" }, { key: "collectionsCta", label: "Collections link" },
+    { key: "newArrivalsTitle", label: "New arrivals title" }, { key: "newArrivalsDescription", label: "New arrivals description" },
+    { key: "bestSellersTitle", label: "Best sellers title" }, { key: "bestSellersDescription", label: "Best sellers description" },
+  ] },
+  { title: "Collection banners", fields: [
+    { key: "collectionLeftTitle", label: "Left title" }, { key: "collectionRightTitle", label: "Right title" },
+    { key: "collectionDiscount", label: "Discount text" }, { key: "collectionCta", label: "Button text" },
+  ] },
+  { title: "Promotion", fields: [
+    { key: "promoTitle1", label: "Title — line 1" }, { key: "promoTitle2", label: "Title — line 2" },
+    { key: "promoSubtitle", label: "Subtitle" }, { key: "promoCta", label: "Button text" },
+  ] },
+  { title: "Store features", fields: [
+    { key: "feature1Title", label: "Feature 1 title" }, { key: "feature1Description", label: "Feature 1 description" },
+    { key: "feature2Title", label: "Feature 2 title" }, { key: "feature2Description", label: "Feature 2 description" },
+    { key: "feature3Title", label: "Feature 3 title" }, { key: "feature3Description", label: "Feature 3 description" },
+    { key: "feature4Title", label: "Feature 4 title" }, { key: "feature4Description", label: "Feature 4 description" },
+  ] },
+  { title: "Brand story", fields: [
+    { key: "brandEyebrow", label: "Eyebrow" }, { key: "brandTitle", label: "Title" },
+    { key: "brandBody", label: "Story", multiline: true }, { key: "brandStatLabel", label: "Statistic label" },
+    { key: "brandFeature1Title", label: "Point 1 title" }, { key: "brandFeature1Description", label: "Point 1 description" },
+    { key: "brandFeature2Title", label: "Point 2 title" }, { key: "brandFeature2Description", label: "Point 2 description" },
+    { key: "brandFeature3Title", label: "Point 3 title" }, { key: "brandFeature3Description", label: "Point 3 description" },
+    { key: "brandCta", label: "Button text" },
+  ] },
+  { title: "Testimonials & Instagram", fields: [
+    { key: "testimonialsTitle", label: "Testimonials title" }, { key: "testimonialsSubtitle", label: "Testimonials subtitle" },
+    { key: "instagramTitle", label: "Instagram title" }, { key: "instagramSubtitle", label: "Instagram subtitle" },
+  ] },
+];
 
 const emptyHero: Omit<HeroSlide, "id"> = {
   image: "",
@@ -180,6 +228,45 @@ function SettingsField({
   );
 }
 
+function SelectionPanel({
+  title, description, items, selected, onToggle, onClear, manageHref,
+}: {
+  title: string;
+  description: string;
+  items: { id: number; label: string; detail?: string; image?: string }[];
+  selected: number[];
+  onToggle: (id: number) => void;
+  onClear: () => void;
+  manageHref?: string;
+}) {
+  return (
+    <SettingsPanel icon={LayoutTemplate} title={title} description={description}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p className="text-[10px] text-[#87918c]">{selected.length ? `${selected.length} selected · selection order is display order` : "Automatic selection is active"}</p>
+        <div className="flex gap-2">
+          {selected.length > 0 && <Button type="button" variant="ghost" size="sm" className="h-7 text-[10px]" onClick={onClear}>Use automatic</Button>}
+          {manageHref && <Button asChild type="button" variant="outline" size="sm" className="h-7 text-[10px]"><Link href={manageHref}>Manage items</Link></Button>}
+        </div>
+      </div>
+      {items.length === 0 ? <p className="rounded-lg border border-dashed p-5 text-center text-xs text-muted-foreground">No items available.</p> : (
+        <div className="grid max-h-72 gap-2 overflow-y-auto pe-1 sm:grid-cols-2">
+          {items.map((item) => {
+            const index = selected.indexOf(item.id);
+            return (
+              <label key={item.id} className="flex cursor-pointer items-center gap-3 rounded-lg border border-[#e4eae6] p-2.5 hover:bg-[#fafcfb]">
+                <Checkbox checked={index >= 0} onCheckedChange={() => onToggle(item.id)} />
+                {item.image && <img src={item.image} alt="" className="size-10 shrink-0 rounded-md object-cover" />}
+                <span className="min-w-0 flex-1"><span className="block truncate text-xs font-medium">{item.label}</span>{item.detail && <span className="block truncate text-[10px] text-muted-foreground">{item.detail}</span>}</span>
+                {index >= 0 && <span className="grid size-5 place-items-center rounded-full bg-[#fff0f1] text-[9px] font-bold text-[#FF2D36]">{index + 1}</span>}
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </SettingsPanel>
+  );
+}
+
 const settingsInputClass = "h-10 rounded-lg border-[#dfe8e2] bg-white text-xs text-[#26312b] shadow-none placeholder:text-[#a6afaa] focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20";
 const tabTriggerClass = "h-9 shrink-0 rounded-lg px-3.5 text-[11px] font-semibold text-[#69746e] data-[state=active]:bg-[#fff0f1] data-[state=active]:text-[#FF2D36] data-[state=active]:shadow-none";
 const dangerInputClass = "h-10 rounded-lg border-[#f0b8bc] bg-white text-xs text-[#26312b] shadow-none placeholder:text-[#c99a9c] focus-visible:border-[#dc2626] focus-visible:ring-[#dc2626]/20";
@@ -201,6 +288,8 @@ export default function AdminSettingsPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
   const [shippingOpts, setShippingOpts] = useState<ShippingOption[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
+  const [homeConfig, setHomeConfig] = useState<HomeConfig>(DEFAULT_HOME_CONFIG);
 
   // Dialog state
   const [heroOpen, setHeroOpen] = useState(false);
@@ -218,6 +307,8 @@ export default function AdminSettingsPage() {
   const [editingHeroId, setEditingHeroId] = useState<number | null>(null);
   const [savingHero, setSavingHero] = useState(false);
   const savingHeroRef = useRef(false);
+  const [editingTestimonialId, setEditingTestimonialId] = useState<number | null>(null);
+  const [savingTestimonial, setSavingTestimonial] = useState(false);
 
   // ---------- Danger Zone state ----------
   const [dbStats, setDbStats] = useState<{ products: number; categories: number } | null>(null);
@@ -230,19 +321,22 @@ export default function AdminSettingsPage() {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, h, t, sh, c, db] = await Promise.all([
+      const [s, h, t, sh, c, db, categoriesData] = await Promise.all([
         fetch("/api/admin/settings", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/hero", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/testimonials", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/shipping", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/coupons", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/database", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/admin/categories", { cache: "no-store" }).then((r) => r.json()),
       ]);
       setSettings(s.settings || {});
+      setHomeConfig(parseHomeConfig(s.settings?.homeConfig));
       setHeroSlides(h.slides || []);
       setTestimonials(t.testimonials || []);
       setShippingOpts(sh.options || []);
       setCoupons(c.coupons || []);
+      setCatalogCategories(categoriesData.categories || []);
       setDbStats({ products: db.products ?? 0, categories: db.categories ?? 0 });
     } catch {
       // ignore — keep empty lists
@@ -307,10 +401,16 @@ export default function AdminSettingsPage() {
   async function saveSettings() {
     setSaving(true);
     try {
-      await fetch("/api/admin/settings", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
-      toast.success("Settings saved");
-    } catch { toast.error("Failed"); }
-    setSaving(false);
+      const response = await fetch("/api/admin/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...settings, homeConfig: JSON.stringify(homeConfig) }),
+      });
+      if (!response.ok) throw new Error("save failed");
+      setSettings((current) => ({ ...current, homeConfig: JSON.stringify(homeConfig) }));
+      toast.success(ar ? "تم حفظ الإعدادات" : "Settings saved");
+    } catch { toast.error(ar ? "تعذر حفظ الإعدادات" : "Failed to save settings"); }
+    finally { setSaving(false); }
   }
 
   async function deleteItem(api: string, id: number | string) {
@@ -417,13 +517,29 @@ export default function AdminSettingsPage() {
     }
   }
 
-  async function createTestimonial() {
+  function openCreateTestimonial() {
+    setEditingTestimonialId(null);
+    setTestimonialForm(emptyTestimonial);
+    setTestimonialOpen(true);
+  }
+
+  function openEditTestimonial(item: Testimonial) {
+    setEditingTestimonialId(item.id);
+    setTestimonialForm({
+      text: item.text, name: item.name, role: item.role, product: item.product,
+      price: item.price, avatar: item.avatar, order: item.order, active: item.active,
+    });
+    setTestimonialOpen(true);
+  }
+
+  async function saveTestimonial() {
     if (!testimonialForm.name.trim()) { toast.error("Name is required"); return; }
     if (!testimonialForm.text.trim()) { toast.error("Text is required"); return; }
-    setCreating("testimonial");
+    if (savingTestimonial) return;
+    setSavingTestimonial(true);
     try {
-      const res = await fetch("/api/admin/testimonials", {
-        method: "POST",
+      const res = await fetch(editingTestimonialId == null ? "/api/admin/testimonials" : `/api/admin/testimonials/${editingTestimonialId}`, {
+        method: editingTestimonialId == null ? "POST" : "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...testimonialForm,
@@ -432,15 +548,37 @@ export default function AdminSettingsPage() {
         }),
       });
       if (!res.ok) throw new Error("create failed");
-      toast.success("Testimonial added");
+      toast.success(editingTestimonialId == null ? "Testimonial added" : "Testimonial updated");
       setTestimonialOpen(false);
+      setEditingTestimonialId(null);
       setTestimonialForm(emptyTestimonial);
       await loadData();
     } catch {
-      toast.error("Failed to add testimonial");
+      toast.error(editingTestimonialId == null ? "Failed to add testimonial" : "Failed to update testimonial");
     } finally {
-      setCreating(null);
+      setSavingTestimonial(false);
     }
+  }
+
+  function toggleHomeSelection(key: "collections" | "testimonials", id: number) {
+    const selected = homeConfig[key];
+    if (selected.includes(id)) {
+      setHomeConfig((current) => ({ ...current, [key]: current[key].filter((item) => item !== id) }));
+      return;
+    }
+    const limit = key === "collections" ? 5 : 12;
+    if (selected.length >= limit) {
+      toast.error(`You can select up to ${limit} items for this section.`);
+      return;
+    }
+    setHomeConfig((current) => ({ ...current, [key]: [...current[key], id] }));
+  }
+
+  function updateHomeText(key: HomeContentKey, language: "en" | "ar", value: string) {
+    setHomeConfig((current) => ({
+      ...current,
+      content: { ...current.content, [key]: { ...current.content[key], [language]: value } },
+    }));
   }
 
   async function createShipping() {
@@ -511,6 +649,7 @@ export default function AdminSettingsPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="no-scrollbar flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl border border-[#e6ece8] bg-white p-2 shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
           <TabsTrigger value="general" className={tabTriggerClass}><Store className="size-3.5" />General</TabsTrigger>
+          <TabsTrigger value="homepage" className={tabTriggerClass}><Images className="size-3.5" />Homepage</TabsTrigger>
           <TabsTrigger value="hero" className={tabTriggerClass}><LayoutTemplate className="size-3.5" />Hero slides</TabsTrigger>
           <TabsTrigger value="testimonials" className={tabTriggerClass}><UsersRound className="size-3.5" />Testimonials</TabsTrigger>
           <TabsTrigger value="shipping" className={tabTriggerClass}><Truck className="size-3.5" />Shipping</TabsTrigger>
@@ -529,6 +668,8 @@ export default function AdminSettingsPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <SettingsField label="Primary announcement"><Input className={settingsInputClass} value={settings.announcement1 || ""} onChange={(e) => setSettings({ ...settings, announcement1: e.target.value })} placeholder="Free shipping on orders over $70" /></SettingsField>
               <SettingsField label="Secondary announcement"><Input className={settingsInputClass} value={settings.announcement2 || ""} onChange={(e) => setSettings({ ...settings, announcement2: e.target.value })} placeholder="Easy returns within 14 days" /></SettingsField>
+              <SettingsField label="Primary announcement (AR)"><Input dir="rtl" className={settingsInputClass} value={settings.announcement1Ar || ""} onChange={(e) => setSettings({ ...settings, announcement1Ar: e.target.value })} /></SettingsField>
+              <SettingsField label="Secondary announcement (AR)"><Input dir="rtl" className={settingsInputClass} value={settings.announcement2Ar || ""} onChange={(e) => setSettings({ ...settings, announcement2Ar: e.target.value })} /></SettingsField>
             </div>
           </SettingsPanel>
           <SettingsPanel icon={CircleDollarSign} title="Checkout rules" description="Control free shipping, cart urgency, and automatic discounts.">
@@ -548,6 +689,74 @@ export default function AdminSettingsPage() {
             </div>
           </SettingsPanel>
           <div className="flex items-center justify-between rounded-xl border border-[#ffd8da] bg-[#fff7f7] px-4 py-3 sm:px-5"><p className="text-[10px] text-[#96656a]">Changes are applied to your storefront after saving.</p><Button onClick={saveSettings} disabled={saving} variant="ghost" className="h-8 rounded-lg px-2 text-[10px] font-semibold text-[#FF2D36] hover:bg-[#fff0f1]">Save changes</Button></div>
+        </TabsContent>
+
+        {/* HOMEPAGE CONTENT */}
+        <TabsContent value="homepage" className="mt-0 space-y-4 focus-visible:outline-none">
+          <SettingsPanel icon={LayoutTemplate} title="Homepage sections" description="Show or hide any homepage block without deleting its content.">
+            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {HOME_SECTION_KEYS.map((key) => (
+                <div key={key} className="flex items-center justify-between rounded-lg border border-[#e4eae6] px-3 py-2.5">
+                  <Label htmlFor={`section-${key}`} className="text-[11px] font-medium">{ar ? HOME_SECTION_LABELS[key].ar : HOME_SECTION_LABELS[key].en}</Label>
+                  <Switch id={`section-${key}`} checked={homeConfig.sections[key]} onCheckedChange={(checked) => setHomeConfig((current) => ({ ...current, sections: { ...current.sections, [key]: checked } }))} />
+                </div>
+              ))}
+            </div>
+          </SettingsPanel>
+
+          {HOME_CONTENT_GROUPS.map((group) => (
+            <SettingsPanel key={group.title} icon={Pencil} title={group.title} description="Edit the English and Arabic copy shown on the storefront.">
+              <div className="grid gap-4 lg:grid-cols-2">
+                {group.fields.map((field) => (
+                  <div key={field.key} className={field.multiline ? "lg:col-span-2" : ""}>
+                    <Label className="text-[10px] font-semibold text-[#56615b]">{field.label}</Label>
+                    <div className="mt-1.5 grid gap-2 sm:grid-cols-2">
+                      {field.multiline ? (
+                        <>
+                          <Textarea className="min-h-24 text-xs" value={homeConfig.content[field.key].en} onChange={(e) => updateHomeText(field.key, "en", e.target.value)} placeholder="English" />
+                          <Textarea dir="rtl" className="min-h-24 text-xs" value={homeConfig.content[field.key].ar} onChange={(e) => updateHomeText(field.key, "ar", e.target.value)} placeholder="العربية" />
+                        </>
+                      ) : (
+                        <>
+                          <Input className={settingsInputClass} value={homeConfig.content[field.key].en} onChange={(e) => updateHomeText(field.key, "en", e.target.value)} placeholder="English" />
+                          <Input dir="rtl" className={settingsInputClass} value={homeConfig.content[field.key].ar} onChange={(e) => updateHomeText(field.key, "ar", e.target.value)} placeholder="العربية" />
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </SettingsPanel>
+          ))}
+
+          <SettingsPanel icon={Images} title="Homepage images" description="Upload or paste a URL for every editorial image on the homepage.">
+            <div className="grid gap-5 lg:grid-cols-2">
+              {([
+                ["collectionLeft", "Collection banner — left"], ["collectionCenter", "Collection banner — center"],
+                ["collectionRight", "Collection banner — right"], ["promoLeft", "Promotion — left"],
+                ["promoRight", "Promotion — right"], ["brandStory", "Brand story"],
+              ] as [HomeImageKey, string][]).map(([key, label]) => (
+                <ImageUpload key={key} label={label} value={homeConfig.images[key]} onChange={(value) => setHomeConfig((current) => ({ ...current, images: { ...current.images, [key]: value } }))} />
+              ))}
+            </div>
+          </SettingsPanel>
+
+          <SettingsPanel icon={LayoutTemplate} title="Links & statistic" description="Destinations for homepage buttons and the brand-story statistic.">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <SettingsField label="Collections link"><Input className={settingsInputClass} value={homeConfig.links.collections} onChange={(e) => setHomeConfig((current) => ({ ...current, links: { ...current.links, collections: e.target.value } }))} /></SettingsField>
+              <SettingsField label="Collection banners link"><Input className={settingsInputClass} value={homeConfig.links.collectionBanner} onChange={(e) => setHomeConfig((current) => ({ ...current, links: { ...current.links, collectionBanner: e.target.value } }))} /></SettingsField>
+              <SettingsField label="Promotion link"><Input className={settingsInputClass} value={homeConfig.links.promo} onChange={(e) => setHomeConfig((current) => ({ ...current, links: { ...current.links, promo: e.target.value } }))} /></SettingsField>
+              <SettingsField label="Brand statistic"><Input className={settingsInputClass} value={homeConfig.brandStat} onChange={(e) => setHomeConfig((current) => ({ ...current, brandStat: e.target.value }))} placeholder="12+" /></SettingsField>
+            </div>
+          </SettingsPanel>
+
+          <SelectionPanel title="Homepage collections" description="Choose up to five collections and control their display order." items={catalogCategories.filter((item) => item.active).map((item) => ({ id: item.id, label: ar ? item.nameAr : item.name, detail: "Active", image: item.image }))} selected={homeConfig.collections} onToggle={(id) => toggleHomeSelection("collections", id)} onClear={() => setHomeConfig((current) => ({ ...current, collections: [] }))} manageHref="/admin/categories" />
+          <SelectionPanel title="Homepage testimonials" description="Choose and order the customer testimonials shown on the homepage." items={testimonials.filter((item) => item.active).map((item) => ({ id: item.id, label: item.name, detail: item.text, image: item.avatar }))} selected={homeConfig.testimonials} onToggle={(id) => toggleHomeSelection("testimonials", id)} onClear={() => setHomeConfig((current) => ({ ...current, testimonials: [] }))} />
+
+          <div className="sticky bottom-3 flex items-center justify-between rounded-xl border border-[#ffd8da] bg-white/95 px-4 py-3 shadow-lg backdrop-blur sm:px-5">
+            <p className="text-[10px] text-[#96656a]">Save changes to publish the homepage content.</p>
+            <Button onClick={saveSettings} disabled={saving} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold text-white hover:bg-[#e52630]">{saving ? <Loader2 className="size-3.5 animate-spin" /> : <Save className="size-3.5" />} Save homepage</Button>
+          </div>
         </TabsContent>
 
         {/* HERO */}
@@ -579,7 +788,7 @@ export default function AdminSettingsPage() {
           <Card className="overflow-hidden rounded-xl border-[#e6ece8] shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
             <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-[#edf1ee] px-4 py-4 sm:px-5">
               <div><CardTitle className="text-[13px] font-semibold text-[#1b241f]">Testimonials</CardTitle><p className="mt-1 text-[10px] text-[#87918c]">{testimonials.length} customer stories shown on the storefront.</p></div>
-              <Button onClick={() => { setTestimonialForm(emptyTestimonial); setTestimonialOpen(true); }} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold hover:bg-[#e52630]" size="sm">
+              <Button onClick={openCreateTestimonial} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold hover:bg-[#e52630]" size="sm">
                 <Plus className="size-3.5" /> Add testimonial
               </Button>
             </CardHeader>
@@ -590,6 +799,7 @@ export default function AdminSettingsPage() {
                 <div key={t.id} className="flex items-center gap-3 rounded-lg border p-3">
                   {t.avatar && <img src={t.avatar} alt="" className="size-10 rounded-full object-cover" />}
                   <div className="flex-1"><p className="text-sm font-medium">{t.name}</p><p className="text-xs text-muted-foreground truncate">{t.text}</p></div>
+                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground" onClick={() => openEditTestimonial(t)}><Pencil className="size-4" /></Button>
                   <Button variant="ghost" size="icon" className="size-8 text-[var(--sale)]" onClick={() => deleteItem("/api/admin/testimonials", t.id)}><Trash2 className="size-4" /></Button>
                 </div>
               ))}
@@ -942,11 +1152,11 @@ export default function AdminSettingsPage() {
       </Dialog>
 
       {/* TESTIMONIAL DIALOG */}
-      <Dialog open={testimonialOpen} onOpenChange={setTestimonialOpen}>
+      <Dialog open={testimonialOpen} onOpenChange={(open) => { setTestimonialOpen(open); if (!open) setEditingTestimonialId(null); }}>
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Testimonial</DialogTitle>
-            <DialogDescription>Add a new customer testimonial.</DialogDescription>
+            <DialogTitle>{editingTestimonialId == null ? "Add Testimonial" : "Edit Testimonial"}</DialogTitle>
+            <DialogDescription>{editingTestimonialId == null ? "Add a new customer testimonial." : "Update this customer testimonial."}</DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-1">
             <div><Label>Text *</Label><Input value={testimonialForm.text} onChange={(e) => setTestimonialForm({...testimonialForm, text: e.target.value})} placeholder="Loved this coat..." /></div>
@@ -968,9 +1178,9 @@ export default function AdminSettingsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setTestimonialOpen(false)} disabled={creating === "testimonial"}>Cancel</Button>
-            <Button onClick={createTestimonial} disabled={creating === "testimonial"}>
-              {creating === "testimonial" ? <><Loader2 className="size-4 animate-spin" /> Creating...</> : "Create Testimonial"}
+            <Button variant="outline" onClick={() => setTestimonialOpen(false)} disabled={savingTestimonial}>Cancel</Button>
+            <Button onClick={saveTestimonial} disabled={savingTestimonial}>
+              {savingTestimonial ? <><Loader2 className="size-4 animate-spin" /> Saving...</> : editingTestimonialId == null ? "Create Testimonial" : "Save Changes"}
             </Button>
           </DialogFooter>
         </DialogContent>
