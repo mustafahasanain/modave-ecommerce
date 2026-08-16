@@ -7,6 +7,7 @@ import {
   Instagram,
   LayoutTemplate,
   Loader2,
+  Pencil,
   Plus,
   Save,
   Settings2,
@@ -213,6 +214,11 @@ export default function AdminSettingsPage() {
   const [creating, setCreating] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("general");
 
+  // Hero slide editing
+  const [editingHeroId, setEditingHeroId] = useState<number | null>(null);
+  const [savingHero, setSavingHero] = useState(false);
+  const savingHeroRef = useRef(false);
+
   // ---------- Danger Zone state ----------
   const [dbStats, setDbStats] = useState<{ products: number; categories: number } | null>(null);
   const [dangerOp, setDangerOp] = useState<DangerOp | null>(null);
@@ -341,6 +347,73 @@ export default function AdminSettingsPage() {
       toast.error("Failed to add hero slide");
     } finally {
       setCreating(null);
+    }
+  }
+
+  function openCreateHero() {
+    setEditingHeroId(null);
+    setHeroForm(emptyHero);
+    setHeroOpen(true);
+  }
+
+  function openEditHero(slide: HeroSlide) {
+    setEditingHeroId(slide.id);
+    setHeroForm({
+      image: slide.image,
+      eyebrow: slide.eyebrow,
+      eyebrowAr: slide.eyebrowAr,
+      title: slide.title,
+      titleAr: slide.titleAr,
+      subtitle: slide.subtitle,
+      subtitleAr: slide.subtitleAr,
+      cta: slide.cta,
+      ctaAr: slide.ctaAr,
+      href: slide.href,
+      order: slide.order,
+      active: slide.active,
+    });
+    setHeroOpen(true);
+  }
+
+  async function saveHero() {
+    if (!heroForm.title.trim()) { toast.error("Title is required"); return; }
+    if (!heroForm.image.trim()) { toast.error("An image is required"); return; }
+    if (editingHeroId == null) return createHero();
+
+    // Prevent duplicate update requests while saving.
+    if (savingHeroRef.current) return;
+    savingHeroRef.current = true;
+    setSavingHero(true);
+    try {
+      const res = await fetch(`/api/admin/hero/${editingHeroId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: heroForm.image,
+          eyebrow: heroForm.eyebrow,
+          eyebrowAr: heroForm.eyebrowAr,
+          title: heroForm.title,
+          titleAr: heroForm.titleAr,
+          subtitle: heroForm.subtitle,
+          subtitleAr: heroForm.subtitleAr,
+          cta: heroForm.cta,
+          ctaAr: heroForm.ctaAr,
+          href: heroForm.href,
+          order: Number(heroForm.order) || 0,
+          active: !!heroForm.active,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "update failed");
+      toast.success("Hero slide updated");
+      setHeroOpen(false);
+      setEditingHeroId(null);
+      await loadData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to update hero slide");
+    } finally {
+      savingHeroRef.current = false;
+      setSavingHero(false);
     }
   }
 
@@ -482,7 +555,7 @@ export default function AdminSettingsPage() {
           <Card className="overflow-hidden rounded-xl border-[#e6ece8] shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
             <CardHeader className="flex-row items-center justify-between space-y-0 border-b border-[#edf1ee] px-4 py-4 sm:px-5">
               <div><CardTitle className="text-[13px] font-semibold text-[#1b241f]">Hero slides</CardTitle><p className="mt-1 text-[10px] text-[#87918c]">{heroSlides.length} configured slides for the storefront.</p></div>
-              <Button onClick={() => { setHeroForm(emptyHero); setHeroOpen(true); }} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold hover:bg-[#e52630]" size="sm">
+              <Button onClick={openCreateHero} className="h-8 rounded-lg bg-[#FF2D36] px-3 text-[10px] font-semibold hover:bg-[#e52630]" size="sm">
                 <Plus className="size-3.5" /> Add slide
               </Button>
             </CardHeader>
@@ -493,6 +566,7 @@ export default function AdminSettingsPage() {
                 <div key={s.id} className="flex items-center gap-3 rounded-lg border p-3">
                   {s.image && <img src={s.image} alt="" className="size-12 rounded object-cover" />}
                   <div className="flex-1"><p className="text-sm font-medium">{s.title}</p><p className="text-xs text-muted-foreground">Order: {s.order} · {s.active ? "Active" : "Inactive"}</p></div>
+                  <Button variant="ghost" size="icon" className="size-8 text-muted-foreground" onClick={() => openEditHero(s)}><Pencil className="size-4" /></Button>
                   <Button variant="ghost" size="icon" className="size-8 text-[var(--sale)]" onClick={() => deleteItem("/api/admin/hero", s.id)}><Trash2 className="size-4" /></Button>
                 </div>
               ))}
@@ -808,11 +882,20 @@ export default function AdminSettingsPage() {
       </AlertDialog>
 
       {/* HERO DIALOG */}
-      <Dialog open={heroOpen} onOpenChange={setHeroOpen}>
+      <Dialog
+        open={heroOpen}
+        onOpenChange={(open) => {
+          if (!open && savingHero) return; // don't allow dismissing mid-save
+          setHeroOpen(open);
+          if (!open) setEditingHeroId(null);
+        }}
+      >
         <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Hero Slide</DialogTitle>
-            <DialogDescription>Create a new home-page hero slide.</DialogDescription>
+            <DialogTitle>{editingHeroId != null ? "Edit Hero Slide" : "Add Hero Slide"}</DialogTitle>
+            <DialogDescription>
+              {editingHeroId != null ? "Update this home-page hero slide, including its image." : "Create a new home-page hero slide."}
+            </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-1">
             <ImageUpload label="Hero image" required value={heroForm.image} onChange={(image) => setHeroForm({...heroForm, image})} />
@@ -842,9 +925,17 @@ export default function AdminSettingsPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setHeroOpen(false)} disabled={creating === "hero"}>Cancel</Button>
-            <Button onClick={createHero} disabled={creating === "hero"}>
-              {creating === "hero" ? <><Loader2 className="size-4 animate-spin" /> Creating...</> : "Create Slide"}
+            <Button
+              variant="outline"
+              onClick={() => { setHeroOpen(false); setEditingHeroId(null); }}
+              disabled={creating === "hero" || savingHero}
+            >
+              Cancel
+            </Button>
+            <Button onClick={saveHero} disabled={creating === "hero" || savingHero}>
+              {creating === "hero" || savingHero ? (
+                <><Loader2 className="size-4 animate-spin" /> {editingHeroId != null ? "Saving..." : "Creating..."}</>
+              ) : editingHeroId != null ? "Save Changes" : "Create Slide"}
             </Button>
           </DialogFooter>
         </DialogContent>
