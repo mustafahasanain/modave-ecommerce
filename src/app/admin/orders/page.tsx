@@ -1,8 +1,8 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Eye, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { Search, Eye, ChevronLeft, ChevronRight, Download, Trash2 } from "lucide-react";
 import { useLanguage } from "@/context/language-provider";
 import { formatPrice } from "@/lib/format";
 import { toast } from "sonner";
@@ -31,6 +31,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type OrderStatus = "paid" | "pending" | "cancelled";
 
@@ -63,6 +73,9 @@ export default function AdminOrdersPage() {
   const [detailOrderId, setDetailOrderId] = useState<string | null>(null);
   const [detailOpen, setDetailOpen] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<AdminOrder | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const deleteInProgress = useRef(false);
 
   async function updateOrderStatus(orderId: string, newStatus: OrderStatus) {
     setUpdatingId(orderId);
@@ -88,6 +101,42 @@ export default function AdminOrdersPage() {
   function openDetail(orderId: string) {
     setDetailOrderId(orderId);
     setDetailOpen(true);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget || deleteInProgress.current) return;
+    deleteInProgress.current = true;
+    setDeletingId(deleteTarget.id);
+    try {
+      const res = await fetch(`/api/admin/orders/${deleteTarget.id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast.success(
+          locale === "ar" ? "تم حذف الطلب نهائياً" : "Order permanently deleted"
+        );
+        setDeleteTarget(null);
+        refetch();
+      } else {
+        const data = await res.json().catch(() => null);
+        const fallback =
+          locale === "ar" ? "فشل حذف الطلب" : "Failed to delete order";
+        toast.error(
+          locale === "ar"
+            ? res.status === 404
+              ? "الطلب غير موجود"
+              : res.status === 409
+                ? "يمكن حذف الطلبات الملغاة فقط"
+                : fallback
+            : data?.error ?? fallback
+        );
+      }
+    } catch {
+      toast.error(locale === "ar" ? "فشل حذف الطلب" : "Failed to delete order");
+    } finally {
+      deleteInProgress.current = false;
+      setDeletingId(null);
+    }
   }
 
   const filtered = useMemo(() => {
@@ -316,15 +365,31 @@ export default function AdminOrdersPage() {
                             </Select>
                           </TableCell>
                           <TableCell className="pe-6 text-end">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="size-8"
-                              onClick={() => openDetail(o.id)}
-                              aria-label="View order"
-                            >
-                              <Eye className="size-4" />
-                            </Button>
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                onClick={() => openDetail(o.id)}
+                                aria-label="View order"
+                              >
+                                <Eye className="size-4" />
+                              </Button>
+                              {o.status === "cancelled" && (
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="size-8 text-destructive hover:text-destructive"
+                                  onClick={() => setDeleteTarget(o)}
+                                  disabled={deletingId === o.id}
+                                  aria-label={
+                                    locale === "ar" ? "حذف الطلب" : "Delete order"
+                                  }
+                                >
+                                  <Trash2 className="size-4" />
+                                </Button>
+                              )}
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -363,6 +428,45 @@ export default function AdminOrdersPage() {
         open={detailOpen}
         onOpenChange={setDetailOpen}
       />
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) =>
+          !o && !deleteInProgress.current && setDeleteTarget(null)
+        }
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl">
+              {locale === "ar" ? "تأكيد الحذف" : "Delete order?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {locale === "ar"
+                ? `سيتم حذف الطلب "${deleteTarget?.orderNumber}" نهائياً. لا يمكن التراجع عن هذا الإجراء.`
+                : `Order "${deleteTarget?.orderNumber}" will be permanently removed. This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deletingId !== null}>
+              {locale === "ar" ? "إلغاء" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deletingId !== null}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {deletingId
+                ? locale === "ar"
+                  ? "جارٍ الحذف..."
+                  : "Deleting..."
+                : locale === "ar"
+                  ? "حذف"
+                  : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
