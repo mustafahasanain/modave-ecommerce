@@ -110,6 +110,13 @@ export const productUpdateSchema = z.object({
   newArrival: z.boolean().optional(),
 });
 
+export const customerUpdateSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120),
+  email: z.string().trim().email("Enter a valid email").max(160),
+  phone: z.string().trim().max(40).optional().nullable(),
+  notes: z.string().trim().max(2000).optional().nullable(),
+}).strict();
+
 export const couponCreateSchema = z.object({
   code: z.string().trim().min(1, "Code is required").max(40),
   type: z.enum(["percentage", "fixed"]).optional().default("percentage"),

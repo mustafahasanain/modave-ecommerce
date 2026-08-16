@@ -15,8 +15,14 @@ export async function GET(req: NextRequest) {
   });
   if (!customer) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  // Orders placed while signed in are linked by customerId, which stays
+  // valid even if the admin later edits the customer's email — matching by
+  // customerId first means an email change never makes those orders vanish.
+  // Legacy/guest orders (no customerId) still fall back to an email match.
   const orders = await db.order.findMany({
-    where: { customerEmail: customer.email },
+    where: {
+      OR: [{ customerId }, { customerId: null, customerEmail: customer.email }],
+    },
     orderBy: { createdAt: "desc" },
   });
   return NextResponse.json({ orders });

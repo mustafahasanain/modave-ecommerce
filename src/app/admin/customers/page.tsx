@@ -1,13 +1,16 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Mail, ShoppingCart } from "lucide-react";
+import { Search, Mail, ShoppingCart, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { useLanguage } from "@/context/language-provider";
 import { formatPrice } from "@/lib/format";
 import { useAdminCustomers, type AdminCustomer } from "@/hooks/use-admin-customers";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -24,6 +27,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type TierKey = "VIP" | "Regular" | "New";
 
@@ -63,10 +84,87 @@ function formatJoined(iso: string, locale: string) {
   }
 }
 
+type FormState = {
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
+};
+
+const emptyForm: FormState = { name: "", email: "", phone: "", notes: "" };
+
 export default function AdminCustomersPage() {
   const { t, locale } = useLanguage();
   const [search, setSearch] = useState("");
-  const { customers, loading } = useAdminCustomers();
+  const { customers, loading, updateCustomer, deleteCustomer } = useAdminCustomers();
+
+  const [editing, setEditing] = useState<AdminCustomer | null>(null);
+  const [form, setForm] = useState<FormState>(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminCustomer | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const deletingRef = useRef(false);
+
+  function openEdit(c: AdminCustomer) {
+    setEditing(c);
+    setForm({
+      name: c.name,
+      email: c.email,
+      phone: c.phone ?? "",
+      notes: c.notes ?? "",
+    });
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (savingRef.current || !editing) return;
+    if (!form.name.trim()) {
+      toast.error(locale === "ar" ? "الاسم مطلوب" : "Name is required");
+      return;
+    }
+    if (!form.email.trim()) {
+      toast.error(locale === "ar" ? "البريد الإلكتروني مطلوب" : "Email is required");
+      return;
+    }
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      const failure = await updateCustomer(editing.id, form);
+      if (failure) {
+        toast.error(failure);
+        return;
+      }
+      toast.success(
+        locale === "ar" ? "تم تحديث بيانات العميل" : "Customer updated successfully"
+      );
+      setEditing(null);
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
+  }
+
+  async function confirmDelete(e: React.MouseEvent<HTMLButtonElement>) {
+    // Radix closes an AlertDialog when its action is clicked by default. Keep
+    // it open until the request succeeds so an API error remains actionable.
+    e.preventDefault();
+    if (deletingRef.current || !deleteTarget) return;
+    deletingRef.current = true;
+    setDeleting(true);
+    try {
+      const failure = await deleteCustomer(deleteTarget.id);
+      if (failure) {
+        toast.error(failure);
+        return;
+      }
+      toast.success(locale === "ar" ? "تم حذف العميل" : "Customer deleted successfully");
+      setDeleteTarget(null);
+    } finally {
+      deletingRef.current = false;
+      setDeleting(false);
+    }
+  }
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -178,8 +276,11 @@ export default function AdminCustomersPage() {
                     <TableHead className="text-[10px] uppercase tracking-[0.15em]">
                       {locale === "ar" ? "تاريخ الانضمام" : "Joined"}
                     </TableHead>
-                    <TableHead className="pe-6 text-[10px] uppercase tracking-[0.15em]">
+                    <TableHead className="text-[10px] uppercase tracking-[0.15em]">
                       {locale === "ar" ? "المستوى" : "Tier"}
+                    </TableHead>
+                    <TableHead className="pe-6 text-end text-[10px] uppercase tracking-[0.15em]">
+                      {t.admin.actions}
                     </TableHead>
                   </TableRow>
                 </TableHeader>
@@ -187,7 +288,7 @@ export default function AdminCustomersPage() {
                   {loading ? (
                     Array.from({ length: 5 }).map((_, i) => (
                       <TableRow key={`skel-${i}`}>
-                        <TableCell colSpan={5} className="py-4">
+                        <TableCell colSpan={6} className="py-4">
                           <div className="flex items-center gap-3">
                             <div className="size-9 animate-pulse rounded-full bg-secondary" />
                             <div className="flex-1 space-y-2">
@@ -200,7 +301,7 @@ export default function AdminCustomersPage() {
                     ))
                   ) : filtered.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-16 text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="py-16 text-center text-muted-foreground">
                         {locale === "ar" ? "لا يوجد عملاء" : "No customers found"}
                       </TableCell>
                     </TableRow>
@@ -238,10 +339,32 @@ export default function AdminCustomersPage() {
                           <TableCell className="text-muted-foreground">
                             {formatJoined(c.joinedAt, locale)}
                           </TableCell>
-                          <TableCell className="pe-6">
+                          <TableCell>
                             <Badge variant="outline" className={st.className}>
                               {st.label}
                             </Badge>
+                          </TableCell>
+                          <TableCell className="pe-6">
+                            <div className="flex items-center justify-end gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8"
+                                onClick={() => openEdit(c)}
+                                aria-label="Edit customer"
+                              >
+                                <Pencil className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="size-8 text-muted-foreground hover:text-destructive"
+                                onClick={() => setDeleteTarget(c)}
+                                aria-label="Delete customer"
+                              >
+                                <Trash2 className="size-4" />
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       );
@@ -288,6 +411,26 @@ export default function AdminCustomersPage() {
                           </span>
                         </div>
                       </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8"
+                          onClick={() => openEdit(c)}
+                          aria-label="Edit customer"
+                        >
+                          <Pencil className="size-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="size-8 text-muted-foreground hover:text-destructive"
+                          onClick={() => setDeleteTarget(c)}
+                          aria-label="Delete customer"
+                        >
+                          <Trash2 className="size-4" />
+                        </Button>
+                      </div>
                     </div>
                   );
                 })
@@ -301,6 +444,123 @@ export default function AdminCustomersPage() {
           </CardContent>
         </Card>
       </motion.div>
+
+      {/* Edit dialog */}
+      <Dialog
+        open={editing !== null}
+        onOpenChange={(o) => !o && !saving && setEditing(null)}
+      >
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl">
+              {locale === "ar" ? "تعديل العميل" : "Edit Customer"}
+            </DialogTitle>
+            <DialogDescription>
+              {locale === "ar"
+                ? "قم بتحديث بيانات التواصل الخاصة بالعميل."
+                : "Update this customer's contact details."}
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSubmit} className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="c-name">{locale === "ar" ? "الاسم" : "Name"}</Label>
+              <Input
+                id="c-name"
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="c-email">
+                {locale === "ar" ? "البريد الإلكتروني" : "Email"}
+              </Label>
+              <Input
+                id="c-email"
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="c-phone">{locale === "ar" ? "الهاتف" : "Phone"}</Label>
+              <Input
+                id="c-phone"
+                value={form.phone}
+                onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="c-notes">{locale === "ar" ? "ملاحظات" : "Notes"}</Label>
+              <Textarea
+                id="c-notes"
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                rows={3}
+              />
+            </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving}
+                onClick={() => setEditing(null)}
+              >
+                {locale === "ar" ? "إلغاء" : "Cancel"}
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving
+                  ? locale === "ar"
+                    ? "جارٍ الحفظ..."
+                    : "Saving..."
+                  : locale === "ar"
+                  ? "حفظ"
+                  : "Save Changes"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete confirmation */}
+      <AlertDialog
+        open={deleteTarget !== null}
+        onOpenChange={(o) => !o && !deleting && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl">
+              {locale === "ar" ? "تأكيد الحذف" : "Delete customer?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {locale === "ar"
+                ? `سيتم حذف حساب "${deleteTarget?.name}" نهائياً. لن يتم حذف طلباته السابقة. لا يمكن التراجع عن هذا الإجراء.`
+                : `"${
+                    deleteTarget ? deleteTarget.name : ""
+                  }"'s account will be permanently deleted. Their past orders will be preserved. This action cannot be undone.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>
+              {locale === "ar" ? "إلغاء" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleting}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {deleting
+                ? locale === "ar"
+                  ? "جارٍ الحذف..."
+                  : "Deleting..."
+                : locale === "ar"
+                ? "حذف"
+                : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
