@@ -57,7 +57,9 @@ export function useProducts(): UseProducts {
       if (!res.ok) throw new Error("Failed to fetch products");
       const data = await res.json();
       const normalized = (data.products as Record<string, unknown>[]).map(normalize);
-      setProducts(normalized.length > 0 ? normalized : staticProducts);
+      // A successful empty response is a legitimate empty store (for example
+      // after an admin reset), not an API failure that should restore demos.
+      setProducts(normalized);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unknown error");
       // Keep the static fallback already set as initial state
@@ -97,7 +99,7 @@ export function useProduct(id: number | null): {
       .then((data) => {
         if (cancelled) return;
         const found = (data.products as Record<string, unknown>[]).find((p) => p.id === id);
-        if (found) setProduct(normalize(found));
+        setProduct(found ? normalize(found) : null);
         setFetched(true);
       })
       .catch((e) => {

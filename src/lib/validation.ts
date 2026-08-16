@@ -117,6 +117,15 @@ export const customerUpdateSchema = z.object({
   notes: z.string().trim().max(2000).optional().nullable(),
 }).strict();
 
+// Danger Zone bulk operations. `operation` is a closed enum — the frontend
+// can never send an arbitrary model name or SQL. `password` is only required
+// (and only checked) for reset_store.
+export const databaseOperationSchema = z.object({
+  operation: z.enum(["delete_products", "delete_categories", "reset_store"]),
+  confirmation: z.string().max(60),
+  password: z.string().max(200).optional(),
+}).strict();
+
 export const couponCreateSchema = z.object({
   code: z.string().trim().min(1, "Code is required").max(40),
   type: z.enum(["percentage", "fixed"]).optional().default("percentage"),

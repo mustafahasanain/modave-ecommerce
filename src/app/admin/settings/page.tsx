@@ -1,6 +1,7 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
+  AlertTriangle,
   BellRing,
   CircleDollarSign,
   Instagram,
@@ -9,6 +10,7 @@ import {
   Plus,
   Save,
   Settings2,
+  ShieldAlert,
   Store,
   TicketPercent,
   Trash2,
@@ -38,6 +40,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { ImageUpload } from "@/components/admin/image-upload";
 
@@ -169,6 +181,14 @@ function SettingsField({
 
 const settingsInputClass = "h-10 rounded-lg border-[#dfe8e2] bg-white text-xs text-[#26312b] shadow-none placeholder:text-[#a6afaa] focus-visible:border-[#FF2D36] focus-visible:ring-[#FF2D36]/20";
 const tabTriggerClass = "h-9 shrink-0 rounded-lg px-3.5 text-[11px] font-semibold text-[#69746e] data-[state=active]:bg-[#fff0f1] data-[state=active]:text-[#FF2D36] data-[state=active]:shadow-none";
+const dangerInputClass = "h-10 rounded-lg border-[#f0b8bc] bg-white text-xs text-[#26312b] shadow-none placeholder:text-[#c99a9c] focus-visible:border-[#dc2626] focus-visible:ring-[#dc2626]/20";
+
+type DangerOp = "delete_products" | "delete_categories" | "reset_store";
+const DANGER_CONFIRM_PHRASES: Record<DangerOp, string> = {
+  delete_products: "DELETE ALL PRODUCTS",
+  delete_categories: "DELETE ALL CATEGORIES",
+  reset_store: "RESET STORE",
+};
 
 export default function AdminSettingsPage() {
   const { locale } = useLanguage();
@@ -191,22 +211,33 @@ export default function AdminSettingsPage() {
   const [shippingForm, setShippingForm] = useState(emptyShipping);
   const [couponForm, setCouponForm] = useState(emptyCoupon);
   const [creating, setCreating] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("general");
+
+  // ---------- Danger Zone state ----------
+  const [dbStats, setDbStats] = useState<{ products: number; categories: number } | null>(null);
+  const [dangerOp, setDangerOp] = useState<DangerOp | null>(null);
+  const [dangerConfirmText, setDangerConfirmText] = useState("");
+  const [dangerPassword, setDangerPassword] = useState("");
+  const [dangerLoading, setDangerLoading] = useState<DangerOp | null>(null);
+  const dangerRequestInFlight = useRef(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [s, h, t, sh, c] = await Promise.all([
+      const [s, h, t, sh, c, db] = await Promise.all([
         fetch("/api/admin/settings", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/hero", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/testimonials", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/shipping", { cache: "no-store" }).then((r) => r.json()),
         fetch("/api/admin/coupons", { cache: "no-store" }).then((r) => r.json()),
+        fetch("/api/admin/database", { cache: "no-store" }).then((r) => r.json()),
       ]);
       setSettings(s.settings || {});
       setHeroSlides(h.slides || []);
       setTestimonials(t.testimonials || []);
       setShippingOpts(sh.options || []);
       setCoupons(c.coupons || []);
+      setDbStats({ products: db.products ?? 0, categories: db.categories ?? 0 });
     } catch {
       // ignore — keep empty lists
     } finally {
@@ -215,6 +246,57 @@ export default function AdminSettingsPage() {
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  function openDangerDialog(op: DangerOp) {
+    setDangerConfirmText("");
+    setDangerPassword("");
+    setDangerOp(op);
+  }
+
+  function closeDangerDialog() {
+    if (dangerLoading) return; // don't allow dismissing mid-request
+    setDangerOp(null);
+    setDangerConfirmText("");
+    setDangerPassword("");
+  }
+
+  async function runDangerOperation(op: DangerOp) {
+    if (dangerRequestInFlight.current) return;
+    dangerRequestInFlight.current = true;
+    setDangerLoading(op);
+    try {
+      const res = await fetch("/api/admin/database", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          operation: op,
+          confirmation: dangerConfirmText,
+          ...(op === "reset_store" ? { password: dangerPassword } : {}),
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        toast.error(data.error || (ar ? "فشلت العملية" : "Operation failed"));
+        return;
+      }
+      toast.success(
+        op === "delete_products"
+          ? ar ? "تم حذف كل المنتجات" : "All products deleted"
+          : op === "delete_categories"
+          ? ar ? "تم حذف كل الفئات" : "All categories deleted"
+          : ar ? "تمت إعادة تعيين قاعدة بيانات المتجر" : "Store database has been reset"
+      );
+      setDangerOp(null);
+      setDangerConfirmText("");
+      setDangerPassword("");
+      await loadData();
+    } catch {
+      toast.error(ar ? "فشلت العملية" : "Operation failed");
+    } finally {
+      dangerRequestInFlight.current = false;
+      setDangerLoading(null);
+    }
+  }
 
   async function saveSettings() {
     setSaving(true);
@@ -353,7 +435,7 @@ export default function AdminSettingsPage() {
           {saving ? "Saving changes" : "Save changes"}
         </Button>
       </div>
-      <Tabs defaultValue="general" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="no-scrollbar flex h-auto w-full justify-start gap-1 overflow-x-auto rounded-xl border border-[#e6ece8] bg-white p-2 shadow-[0_5px_18px_rgba(27,61,46,0.03)]">
           <TabsTrigger value="general" className={tabTriggerClass}><Store className="size-3.5" />General</TabsTrigger>
           <TabsTrigger value="hero" className={tabTriggerClass}><LayoutTemplate className="size-3.5" />Hero slides</TabsTrigger>
@@ -485,6 +567,245 @@ export default function AdminSettingsPage() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {activeTab === "general" && (
+      /* DANGER ZONE — only shown with the General settings. */
+      <section className="overflow-hidden rounded-xl border-2 border-[#f3b9bd] bg-[#fff7f7] shadow-[0_5px_18px_rgba(220,38,38,0.06)]">
+        <div className="flex items-start gap-3 border-b border-[#f3b9bd] px-4 py-4 sm:px-5">
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#fde2e2] text-[#dc2626]">
+            <ShieldAlert className="size-[18px]" strokeWidth={1.8} />
+          </span>
+          <div>
+            <h2 className="text-[13px] font-semibold text-[#7f1d1d]">{ar ? "منطقة الخطر" : "Danger Zone"}</h2>
+            <p className="mt-0.5 text-[10px] leading-4 text-[#a55a5e]">
+              {ar
+                ? "عمليات حذف جماعية دائمة على قاعدة البيانات. هذه الإجراءات لا يمكن التراجع عنها."
+                : "Permanent, bulk database operations. These actions cannot be undone."}
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-3 p-4 sm:p-5 lg:grid-cols-3">
+          {/* Delete all products */}
+          <div className="flex flex-col rounded-lg border border-[#f3b9bd] bg-white p-4">
+            <p className="text-[12px] font-semibold text-[#1b241f]">{ar ? "حذف كل المنتجات" : "Delete All Products"}</p>
+            <p className="mt-1.5 flex-1 text-[10px] leading-4 text-[#87918c]">
+              {ar
+                ? `سيتم حذف ${dbStats?.products ?? "—"} منتج نهائياً مع تقييماتها. لن تتأثر الطلبات أو العملاء أو الفئات.`
+                : `Permanently deletes ${dbStats?.products ?? "—"} product${dbStats?.products === 1 ? "" : "s"} and their reviews. Orders, customers, and categories are not affected.`}
+            </p>
+            <Button
+              onClick={() => openDangerDialog("delete_products")}
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 w-full rounded-lg border-[#f3b9bd] bg-white px-3 text-[10px] font-semibold text-[#dc2626] hover:bg-[#fde2e2] hover:text-[#dc2626]"
+            >
+              <Trash2 className="size-3.5" /> {ar ? "حذف كل المنتجات" : "Delete All Products"}
+            </Button>
+          </div>
+
+          {/* Delete all categories */}
+          <div className="flex flex-col rounded-lg border border-[#f3b9bd] bg-white p-4">
+            <p className="text-[12px] font-semibold text-[#1b241f]">{ar ? "حذف كل الفئات" : "Delete All Categories"}</p>
+            <p className="mt-1.5 flex-1 text-[10px] leading-4 text-[#87918c]">
+              {ar
+                ? `سيتم حذف ${dbStats?.categories ?? "—"} فئة نهائياً. المنتجات تخزّن اسم الفئة بشكل مستقل وستبقى كما هي.`
+                : `Permanently deletes ${dbStats?.categories ?? "—"} categor${dbStats?.categories === 1 ? "y" : "ies"}. Products store their category name independently and will remain untouched.`}
+            </p>
+            <Button
+              onClick={() => openDangerDialog("delete_categories")}
+              variant="outline"
+              size="sm"
+              className="mt-3 h-8 w-full rounded-lg border-[#f3b9bd] bg-white px-3 text-[10px] font-semibold text-[#dc2626] hover:bg-[#fde2e2] hover:text-[#dc2626]"
+            >
+              <Trash2 className="size-3.5" /> {ar ? "حذف كل الفئات" : "Delete All Categories"}
+            </Button>
+          </div>
+
+          {/* Reset store database */}
+          <div className="flex flex-col rounded-lg border-2 border-[#dc2626] bg-[#fde2e2]/50 p-4">
+            <p className="text-[12px] font-semibold text-[#7f1d1d]">{ar ? "إعادة تعيين قاعدة بيانات المتجر" : "Reset Store Database"}</p>
+            <p className="mt-1.5 flex-1 text-[10px] leading-4 text-[#a55a5e]">
+              {ar
+                ? "يحذف كل بيانات المتجر (المنتجات، الطلبات، العملاء، التقييمات، المدونة، الفئات، الإعدادات، الشرائح، الشهادات، خيارات الشحن، القسائم) نهائياً، مع الإبقاء على حساب المسؤول الحالي فقط."
+                : "Permanently deletes ALL store data — products, orders, customers, reviews, blog posts, categories, settings, hero slides, testimonials, shipping options, and coupons — while keeping only your Admin account."}
+            </p>
+            <Button
+              onClick={() => openDangerDialog("reset_store")}
+              size="sm"
+              className="mt-3 h-8 w-full rounded-lg bg-[#dc2626] px-3 text-[10px] font-semibold text-white hover:bg-[#b91c1c]"
+            >
+              <AlertTriangle className="size-3.5" /> {ar ? "إعادة تعيين المتجر" : "Reset Store Database"}
+            </Button>
+          </div>
+        </div>
+      </section>
+      )}
+
+      {/* DANGER ZONE — Delete All Products confirmation */}
+      <AlertDialog open={dangerOp === "delete_products"} onOpenChange={(o) => !o && closeDangerDialog()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl text-[#7f1d1d]">
+              {ar ? "حذف كل المنتجات؟" : "Delete all products?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  {ar
+                    ? `سيتم حذف ${dbStats?.products ?? "—"} منتج نهائياً من قاعدة البيانات مع تقييماتها. لا يمكن التراجع عن هذا الإجراء. الطلبات والعملاء والفئات لن تتأثر.`
+                    : `This will permanently delete ${dbStats?.products ?? "—"} product${dbStats?.products === 1 ? "" : "s"} and their reviews from the database. This action cannot be undone. Orders, customers, and categories will not be affected.`}
+                </p>
+                <p>
+                  {ar ? (
+                    <>اكتب <span className="font-mono font-semibold text-[#dc2626]">DELETE ALL PRODUCTS</span> للتأكيد:</>
+                  ) : (
+                    <>Type <span className="font-mono font-semibold text-[#dc2626]">DELETE ALL PRODUCTS</span> to confirm:</>
+                  )}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            autoFocus
+            value={dangerConfirmText}
+            onChange={(e) => setDangerConfirmText(e.target.value)}
+            placeholder="DELETE ALL PRODUCTS"
+            className={dangerInputClass}
+            disabled={dangerLoading === "delete_products"}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={dangerLoading === "delete_products"}>
+              {ar ? "إلغاء" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); runDangerOperation("delete_products"); }}
+              disabled={dangerConfirmText !== DANGER_CONFIRM_PHRASES.delete_products || dangerLoading === "delete_products"}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {dangerLoading === "delete_products" ? <><Loader2 className="size-4 animate-spin" /> {ar ? "جارٍ الحذف..." : "Deleting..."}</> : ar ? "حذف نهائي" : "Delete Permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DANGER ZONE — Delete All Categories confirmation */}
+      <AlertDialog open={dangerOp === "delete_categories"} onOpenChange={(o) => !o && closeDangerDialog()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl text-[#7f1d1d]">
+              {ar ? "حذف كل الفئات؟" : "Delete all categories?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p>
+                  {ar
+                    ? `سيتم حذف ${dbStats?.categories ?? "—"} فئة نهائياً من قاعدة البيانات. لا يمكن التراجع عن هذا الإجراء. المنتجات تخزّن اسم الفئة بشكل مستقل عن سجل الفئة، لذا ستبقى المنتجات كما هي حتى بعد حذف تعريفات الفئات.`
+                    : `This will permanently delete ${dbStats?.categories ?? "—"} categor${dbStats?.categories === 1 ? "y" : "ies"} from the database. This action cannot be undone. Products store their category name independently of the Category record, so products can remain even after category definitions are removed.`}
+                </p>
+                <p>
+                  {ar ? (
+                    <>اكتب <span className="font-mono font-semibold text-[#dc2626]">DELETE ALL CATEGORIES</span> للتأكيد:</>
+                  ) : (
+                    <>Type <span className="font-mono font-semibold text-[#dc2626]">DELETE ALL CATEGORIES</span> to confirm:</>
+                  )}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            autoFocus
+            value={dangerConfirmText}
+            onChange={(e) => setDangerConfirmText(e.target.value)}
+            placeholder="DELETE ALL CATEGORIES"
+            className={dangerInputClass}
+            disabled={dangerLoading === "delete_categories"}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={dangerLoading === "delete_categories"}>
+              {ar ? "إلغاء" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); runDangerOperation("delete_categories"); }}
+              disabled={dangerConfirmText !== DANGER_CONFIRM_PHRASES.delete_categories || dangerLoading === "delete_categories"}
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {dangerLoading === "delete_categories" ? <><Loader2 className="size-4 animate-spin" /> {ar ? "جارٍ الحذف..." : "Deleting..."}</> : ar ? "حذف نهائي" : "Delete Permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* DANGER ZONE — Reset Store Database confirmation (strongest guard: typed
+          phrase + current admin password verified on the backend) */}
+      <AlertDialog open={dangerOp === "reset_store"} onOpenChange={(o) => !o && closeDangerDialog()}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="font-display text-xl text-[#7f1d1d]">
+              {ar ? "إعادة تعيين قاعدة بيانات المتجر؟" : "Reset the store database?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                <p className="font-semibold text-[#7f1d1d]">
+                  {ar
+                    ? "سيتم حذف جميع بيانات المتجر نهائياً — المنتجات، الطلبات، العملاء، التقييمات، المدونة، الفئات، الإعدادات، شرائح البداية، الشهادات، خيارات الشحن، والقسائم."
+                    : "This will permanently delete ALL store data — products, orders, customers, reviews, blog posts, categories, settings, hero slides, testimonials, shipping options, and coupons."}
+                </p>
+                <p>
+                  {ar
+                    ? "سيبقى حساب المسؤول الحالي دون تغيير وستظل جلستك مسجلة الدخول. لا يمكن التراجع عن هذا الإجراء."
+                    : "Your Admin account will remain unchanged and you will stay logged in. This action cannot be undone."}
+                </p>
+                <p>
+                  {ar ? (
+                    <>اكتب <span className="font-mono font-semibold text-[#dc2626]">RESET STORE</span> للتأكيد:</>
+                  ) : (
+                    <>Type <span className="font-mono font-semibold text-[#dc2626]">RESET STORE</span> to confirm:</>
+                  )}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-3">
+            <Input
+              autoFocus
+              value={dangerConfirmText}
+              onChange={(e) => setDangerConfirmText(e.target.value)}
+              placeholder="RESET STORE"
+              className={dangerInputClass}
+              disabled={dangerLoading === "reset_store"}
+            />
+            <div>
+              <Label className="text-[10px] font-semibold text-[#56615b]">
+                {ar ? "كلمة مرور المسؤول الحالية" : "Your current admin password"}
+              </Label>
+              <Input
+                type="password"
+                value={dangerPassword}
+                onChange={(e) => setDangerPassword(e.target.value)}
+                placeholder="••••••••"
+                className={`mt-1.5 ${dangerInputClass}`}
+                disabled={dangerLoading === "reset_store"}
+              />
+            </div>
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={dangerLoading === "reset_store"}>
+              {ar ? "إلغاء" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => { e.preventDefault(); runDangerOperation("reset_store"); }}
+              disabled={
+                dangerConfirmText !== DANGER_CONFIRM_PHRASES.reset_store ||
+                !dangerPassword ||
+                dangerLoading === "reset_store"
+              }
+              className="bg-destructive text-white hover:bg-destructive/90"
+            >
+              {dangerLoading === "reset_store" ? <><Loader2 className="size-4 animate-spin" /> {ar ? "جارٍ إعادة التعيين..." : "Resetting..."}</> : ar ? "إعادة تعيين المتجر نهائياً" : "Reset Store Permanently"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* HERO DIALOG */}
       <Dialog open={heroOpen} onOpenChange={setHeroOpen}>

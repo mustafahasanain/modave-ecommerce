@@ -74,7 +74,11 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    await db.product.delete({ where: { id: Number(id) } });
+    const productId = Number(id);
+    await db.$transaction([
+      db.review.deleteMany({ where: { productId } }),
+      db.product.delete({ where: { id: productId } }),
+    ]);
     return NextResponse.json({ success: true });
   } catch (e) {
     console.error("DELETE product error:", e);

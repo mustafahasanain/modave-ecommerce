@@ -11,7 +11,9 @@ export function useCategories() {
       const res = await fetch("/api/categories", { cache: "no-store" });
       if (!res.ok) throw new Error("fetch failed");
       const data = await res.json();
-      if (data.categories?.length > 0) setCategories(data.categories);
+      // Preserve the static fallback only for an actual request failure. An
+      // empty response means the administrator intentionally has no categories.
+      setCategories(data.categories || []);
     } catch {}
     setLoading(false);
   }, []);
