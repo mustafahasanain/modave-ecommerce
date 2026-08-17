@@ -16,8 +16,6 @@ function getSessionSecret(): string {
   return "modave-development-only-customer-secret-do-not-use-in-production";
 }
 
-const SESSION_SECRET = getSessionSecret();
-
 export function hashPassword(password: string) {
   const salt = randomBytes(16).toString("hex");
   const hash = scryptSync(password, salt, 64).toString("hex");
@@ -33,7 +31,7 @@ export function verifyPassword(password: string, storedHash: string) {
 
 export function createCustomerSession(customerId: string) {
   const payload = `${customerId}.${Date.now() + SESSION_MAX_AGE * 1000}`;
-  const signature = createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
+  const signature = createHmac("sha256", getSessionSecret()).update(payload).digest("hex");
   return `${payload}.${signature}`;
 }
 
@@ -42,7 +40,7 @@ export function getCustomerIdFromSession(value: string | undefined) {
   const [customerId, expiresAt, signature] = value.split(".");
   if (!customerId || !expiresAt || !signature || Number(expiresAt) < Date.now()) return null;
   const payload = `${customerId}.${expiresAt}`;
-  const expected = createHmac("sha256", SESSION_SECRET).update(payload).digest("hex");
+  const expected = createHmac("sha256", getSessionSecret()).update(payload).digest("hex");
   if (signature.length !== expected.length || !timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null;
   return customerId;
 }
