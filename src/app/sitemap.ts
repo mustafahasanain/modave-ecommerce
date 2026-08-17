@@ -3,6 +3,10 @@ import { db } from "@/lib/db";
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000";
 
+// Force dynamic rendering: this route queries the database, which isn't
+// reachable at build time, so it can't be statically prerendered.
+export const dynamic = "force-dynamic";
+
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [products, posts] = await Promise.all([
     db.product.findMany({ where: { status: "active" }, select: { id: true, updatedAt: true } }),
