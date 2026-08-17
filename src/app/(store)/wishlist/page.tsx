@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
@@ -14,6 +15,14 @@ import { ProductCard } from "@/components/product/product-card";
 import { toast } from "sonner";
 
 export default function WishlistPage() {
+  return (
+    <Suspense fallback={null}>
+      <WishlistPageContent />
+    </Suspense>
+  );
+}
+
+function WishlistPageContent() {
   const { t, locale, dir } = useLanguage();
   const Arrow = dir === "rtl" ? ArrowLeft : ArrowRight;
   const searchParams = useSearchParams();

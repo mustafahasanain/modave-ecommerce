@@ -4,7 +4,7 @@ const SESSION_COOKIE = "modave_admin_session";
 const SESSION_MAX_AGE_MS = 60 * 60 * 24 * 7 * 1000; // 7 days
 
 // Uses Web Crypto (crypto.subtle) instead of Node's `crypto` module because
-// this file is imported by middleware.ts, which runs on the Edge runtime.
+// this file is imported by proxy.ts, which runs on the Edge runtime.
 function getSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET;
   if (secret) return secret;

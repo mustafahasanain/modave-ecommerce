@@ -3,7 +3,7 @@ import { SESSION_COOKIE_NAME, isValidSession, redirectToLogin } from "@/lib/auth
 
 const CUSTOMER_SESSION_COOKIE = "modave_customer_session";
 
-export async function middleware(req: NextRequest) {
+export async function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
   // Do not serve the account dashboard unless a customer session exists. The
